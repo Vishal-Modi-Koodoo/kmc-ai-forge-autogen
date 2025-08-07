@@ -1,8 +1,6 @@
-using AutoGen.Core;
 using Azure;
 using KMC_Forge_BTL_Core_Agent.Tools;
-using KMC_Forge_BTL_Core_Agent.Utils;
-using AutoGen;
+using KMC_FOrge_BTL_Models.PDFExtractorResponse;
 
 
 namespace KMC_Forge_BTL_Core_Agent.Agents
@@ -26,10 +24,10 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             _imageExtractionTool = new ImageExtractionTool();
         }
 
-        public async Task<string> ExtractDataFromPdfAsync(string path)
+        public async Task<CompanyInfo> ExtractDataFromPdfAsync(string path)
         {
             // Delegate PDF extraction to the tool
-            return await ExtractDataAsync(path);
+            return await _pdfExtractionTool.ExtractDataAsync(path);
         }
 
         public async Task<string> ExtractDetailsFromImageAsync(byte[] imageBytes)
@@ -38,51 +36,5 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             return await _imageExtractionTool.ExtractDetailsAsync(imageBytes);
         }
 
-        public async Task<string> ExtractDataAsync(string path)
-        {
-            // Delegate PDF extraction to the tool
-            string extractedText = PdfExtractor.ExtractTextFromPdf(path);
-
-            if (string.IsNullOrWhiteSpace(extractedText))
-            {
-                Console.WriteLine("No text could be extracted from the PDF.");
-                return "";
-            }
-
-            //        var pdfAnalyzer = new PdfAnalysisAgent(openAIClient, model, analysisPrompt)
-            //.RegisterMessageConnector()
-            //.RegisterPrintMessage();
-
-            var userProxy = new UserProxyAgent(
-       name: "user",
-       systemMessage: "check the values",
-       defaultReply: "Thank you for the output",
-       humanInputMode: HumanInputMode.NEVER)// Set to NEVER for automated processing
-       .RegisterPrintMessage();
-
-
-            Console.WriteLine("\nAnalyzing PDF content with AI...\n");
-
-            // Prepare the message with extracted PDF content
-
-
-            // Start the conversation
-            var messages = await userProxy.InitiateChatAsync(
-                receiver: _pdfExtractionTool,
-                message: extractedText,
-                maxRound: 1);
-
-            // Find the assistant agent response that contains JSON
-            string aiJson = null;
-            foreach (var message in messages)
-            {
-                if (message is TextMessage textMessage && textMessage.Role == Role.Assistant)
-                {
-                    aiJson = textMessage.Content;
-                }
-            }
-
-            return aiJson ?? "No valid JSON response from AI.";
-        }
     }
 }
