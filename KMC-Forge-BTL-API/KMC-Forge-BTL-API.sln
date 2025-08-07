@@ -5,6 +5,8 @@ VisualStudioVersion = 17.11.35222.181
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KMC-Forge-BTL-API", "KMC-Forge-BTL-API\KMC-Forge-BTL-API.csproj", "{D8603419-2126-4EC8-98A9-866F5211C486}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KMC-Forge-BTL-Core-Agent", "KMC-Forge-BTL-Core-Agent\KMC-Forge-BTL-Core-Agent.csproj", "{0C5804B8-C1AA-4F42-AD4B-7C38237E8106}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{D8603419-2126-4EC8-98A9-866F5211C486}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D8603419-2126-4EC8-98A9-866F5211C486}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D8603419-2126-4EC8-98A9-866F5211C486}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0C5804B8-C1AA-4F42-AD4B-7C38237E8106}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C5804B8-C1AA-4F42-AD4B-7C38237E8106}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C5804B8-C1AA-4F42-AD4B-7C38237E8106}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C5804B8-C1AA-4F42-AD4B-7C38237E8106}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
