@@ -13,4 +13,9 @@
     <Folder Include="Tools\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="AutoGen" Version="0.2.3" />
+    <PackageReference Include="itext7" Version="9.2.0" />
+  </ItemGroup>
+
 </Project>
