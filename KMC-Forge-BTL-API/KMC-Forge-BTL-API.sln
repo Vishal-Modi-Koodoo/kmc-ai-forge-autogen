@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35222.181
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KMC-Forge-BTL-API", "KMC-Forge-BTL-API\KMC-Forge-BTL-API.csproj", "{D8603419-2126-4EC8-98A9-866F5211C486}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D8603419-2126-4EC8-98A9-866F5211C486}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8603419-2126-4EC8-98A9-866F5211C486}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8603419-2126-4EC8-98A9-866F5211C486}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8603419-2126-4EC8-98A9-866F5211C486}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C9664AF3-0D68-41D6-903C-E63C70DE697D}
+	EndGlobalSection
+EndGlobal
