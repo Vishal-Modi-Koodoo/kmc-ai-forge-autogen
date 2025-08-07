@@ -1,5 +1,6 @@
 using KMC_AI_Forge_BTL_Agent.Contracts;
 using KMC_AI_Forge_BTL_Agent.Services;
+using KMC_Forge_BTL_API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

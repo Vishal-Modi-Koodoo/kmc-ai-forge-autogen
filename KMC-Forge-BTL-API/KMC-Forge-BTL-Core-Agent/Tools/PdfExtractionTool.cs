@@ -3,7 +3,7 @@ using AutoGen.Core;
 using AutoGen.OpenAI;
 using Azure.AI.OpenAI;
 using KMC_Forge_BTL_Core_Agent.Utils;
-using KMC_FOrge_BTL_Models.PDFExtractorResponse;
+using KMC_Forge_BTL_Models.PDFExtractorResponse;
 
 namespace KMC_Forge_BTL_Core_Agent.Tools
 {
@@ -36,10 +36,11 @@ namespace KMC_Forge_BTL_Core_Agent.Tools
 
             Console.WriteLine("\nAnalyzing PDF content with AI...\n");
 
-            var messages = await userProxy.InitiateChatAsync(
-                receiver: this,
-                message: extractedText,
-                maxRound: 1);
+            try{
+              var messages = await userProxy.InitiateChatAsync(
+                 receiver: this,
+                 message: extractedText,
+                 maxRound: 1);
 
             string aiJson = null;
             foreach (var message in messages)
@@ -52,6 +53,11 @@ namespace KMC_Forge_BTL_Core_Agent.Tools
 
             var companyInfo = System.Text.Json.JsonSerializer.Deserialize<CompanyInfo>(aiJson);
             return companyInfo;
+           }
+           catch(Exception ex){
+            Console.WriteLine("Error extracting data from PDF: " + ex.Message);
+            return new CompanyInfo();
+           }
         }
     }
 }
