@@ -8,11 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\KMC-Forge-BTL-Core-Agent\KMC-Forge-BTL-Core-Agent.csproj" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.3" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.25.0" />
+    <PackageReference Include="Microsoft.Playwright" Version="1.54.0" />
   </ItemGroup>
 
 </Project>
