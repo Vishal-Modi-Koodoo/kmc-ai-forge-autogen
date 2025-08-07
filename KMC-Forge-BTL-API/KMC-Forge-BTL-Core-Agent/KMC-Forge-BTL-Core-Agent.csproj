@@ -15,7 +15,12 @@
 
   <ItemGroup>
     <PackageReference Include="AutoGen" Version="0.2.3" />
+    <PackageReference Include="Azure.Core" Version="1.47.1" />
     <PackageReference Include="itext7" Version="9.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KMC-FOrge-BTL-Models\KMC-Forge-BTL-Models.csproj" />
   </ItemGroup>
 
 </Project>
