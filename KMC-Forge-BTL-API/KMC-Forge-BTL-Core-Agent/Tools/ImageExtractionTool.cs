@@ -8,6 +8,6 @@ namespace KMC_Forge_BTL_Core_Agent.Tools
         {
             // TODO: Implement actual image extraction logic
             return await Task.FromResult("Image extraction not implemented.");
-        }        
+        }
     }
 }

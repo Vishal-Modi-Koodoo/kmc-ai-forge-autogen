@@ -3,6 +3,7 @@ using KMC_Forge_BTL_Core_Agent.Tools;
 using KMC_Forge_BTL_Models.PDFExtractorResponse;
 using KMC_Forge_BTL_Core_Agent.Utils;
 
+
 namespace KMC_Forge_BTL_Core_Agent.Agents
 {
     public class DocumentValidatorAgent
@@ -20,17 +21,19 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             if (!string.IsNullOrWhiteSpace(_openAIKey))
             {
                 _openAIClient = new Azure.AI.OpenAI.AzureOpenAIClient(
-                    new Uri("https://kmc-ai-forge.openai.azure.com/"),
-                    new AzureKeyCredential(_openAIKey)
-                );
+     new Uri("https://kmc-ai-forge.openai.azure.com/"),
+     new AzureKeyCredential(_openAIKey)
+ );
             }
 
             // Read the analysis prompt from a text file
             string analysisPrompt = System.IO.File.ReadAllText("/Users/Monish.Koyott/Desktop/KMC-AI-Forge-BTL/kmc-ai-forge-autogen/KMC-Forge-BTL-API/KMC-Forge-BTL-Core-Agent/Prompts/PDFExtractorPrompt.txt");
             
             if (_openAIClient != null)
-            {
-                _pdfExtractionTool = new PdfExtractionTool(_openAIClient, _model, analysisPrompt);
+        {
+            // Read the analysis prompt from a text file
+            string analysisPrompt = System.IO.File.ReadAllText("analysisPrompt.txt");
+            _pdfExtractionTool = new PdfExtractionTool(_openAIClient, _model, analysisPrompt);
             }
             else
             {
