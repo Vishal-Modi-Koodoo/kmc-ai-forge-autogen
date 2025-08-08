@@ -1,20 +1,21 @@
 using AutoGen;
 using AutoGen.Core;
 using AutoGen.OpenAI;
-using Azure.AI.OpenAI;
+using KMC_Forge_BTL_Configurations;
 using KMC_Forge_BTL_Core_Agent.Utils;
 using KMC_Forge_BTL_Models.PDFExtractorResponse;
 
 namespace KMC_Forge_BTL_Core_Agent.Tools
 {
-    public class PdfExtractionTool : OpenAIChatAgent
+    public class PdfExtractionTool 
     {
-        public PdfExtractionTool(AzureOpenAIClient openAIClient, string model, string analysisPrompt)
-            : base(
-                name: "pdf_analyzer",
-                systemMessage: analysisPrompt,
-                chatClient: openAIClient.GetChatClient(model))
+        private readonly MiddlewareStreamingAgent<OpenAIChatAgent> _pdfAnalyserAgent;
+        private readonly AppConfiguration _config;
+
+        public PdfExtractionTool(MiddlewareStreamingAgent<OpenAIChatAgent> pdfAnalyserAgent)
         {
+            _pdfAnalyserAgent = pdfAnalyserAgent;
+            _config = AppConfiguration.Instance;
         }
 
         public async Task<CompanyInfo> ExtractDataAsync(string path)
@@ -36,8 +37,8 @@ namespace KMC_Forge_BTL_Core_Agent.Tools
 
             Console.WriteLine("\nAnalyzing PDF content with AI...\n");
 
-            // Retry logic with exponential backoff
-            int maxRetries = 3;
+            // Retry logic with exponential backoff using configuration
+            int maxRetries = _config.MaxRetries;
             int currentRetry = 0;
             
             while (currentRetry < maxRetries)
@@ -45,7 +46,7 @@ namespace KMC_Forge_BTL_Core_Agent.Tools
                 try
                 {
                     var messages = await userProxy.InitiateChatAsync(
-                        receiver: this,
+                        receiver: _pdfAnalyserAgent,
                         message: extractedText,
                         maxRound: 1);
 
@@ -70,7 +71,7 @@ namespace KMC_Forge_BTL_Core_Agent.Tools
                         return new CompanyInfo();
                     }
                     
-                    int delayMs = (int)Math.Pow(2, currentRetry) * 1000; // Exponential backoff: 2s, 4s, 8s
+                    int delayMs = (int)Math.Pow(2, currentRetry) * _config.RetryDelayMs; // Use configured delay
                     Console.WriteLine($"Rate limit hit. Retrying in {delayMs/1000} seconds... (Attempt {currentRetry}/{maxRetries})");
                     await Task.Delay(delayMs);
                 }

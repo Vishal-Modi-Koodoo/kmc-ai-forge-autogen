@@ -1,78 +1,90 @@
 using AutoGen;
 using AutoGen.Core;
 using AutoGen.OpenAI;
+using Azure.AI.OpenAI;
+using KMC_Forge_BTL_Configurations;
 using KMC_FOrge_BTL_Models.ImageDataExtractorResponse;
 
 namespace KMC_Forge_BTL_Core_Agent.Tools
 {
-    public class ImageExtractionTool
+    public class ImageExtractionTool : OpenAIChatAgent
     {
-        private readonly string _baseUrl = "https://find-and-update.company-information.service.gov.uk/company/";
-        private readonly MiddlewareStreamingAgent<OpenAIChatAgent> _imageAnalyserAgent;
+        private readonly AppConfiguration _config;
 
-        // Constructor to initialize the PDFAnalyserAgent
-        public ImageExtractionTool(MiddlewareStreamingAgent<OpenAIChatAgent> imageAnalyserAgent)
+        public ImageExtractionTool(AzureOpenAIClient openAIClient, string model, string analysisPrompt)
+            : base(
+                name: "image_analyzer",
+                systemMessage: analysisPrompt,
+                chatClient: openAIClient.GetChatClient(model))
         {
-            _imageAnalyserAgent = imageAnalyserAgent;
+            _config = AppConfiguration.Instance;
         }
 
-        public async Task<ChargeInfo> ExtractDataAsync(string path)
+        public async Task<ImageExtractionResult> ExtractDataAsync(string path)
         {
+            string extractedText = ImageTextExtractor.ExtractTextFromImage(path);
+
+            if (string.IsNullOrWhiteSpace(extractedText))
+            {
+                Console.WriteLine("No text could be extracted from the image.");
+                return new ImageExtractionResult();
+            }
+
+            var userProxy = new UserProxyAgent(
+                name: "user",
+                systemMessage: "check the values",
+                defaultReply: "Thank you for the output",
+                humanInputMode: HumanInputMode.NEVER)
+                .RegisterPrintMessage();
+
+            Console.WriteLine("\nAnalyzing Image content with AI...\n");
+
+            // Retry logic with exponential backoff using configuration
+            int maxRetries = _config.MaxRetries;
+            int currentRetry = 0;
             
-            try
+            while (currentRetry < maxRetries)
             {
-                using var httpClient = new HttpClient();
-                var imageBytes = await httpClient.GetByteArrayAsync(path);
-
-
-                var userProxy = new UserProxyAgent(
-                    name: "user",
-                    systemMessage: "You are an expert at extracting structured information from images. Given an image, extract only the following fields as JSON: { \"PersonsEntitled\": \"...\", \"BriefDescription\": \"...\" }. Do not return anything else.",
-                    defaultReply: "Thank you for the output",
-                    humanInputMode: HumanInputMode.NEVER
-                ).RegisterPrintMessage();
-
-                Console.WriteLine("\nAnalyzing image content with Azure OpenAI LLM...\n");
-
-
-                var messages = await userProxy.InitiateChatAsync(
-                    receiver: _imageAnalyserAgent,
-                    message: Convert.ToBase64String(imageBytes),
-                    maxRound: 1
-                );
-
-                string aiJson = null;
-                foreach (var message in messages)
+                try
                 {
-                    if (message is TextMessage textMessage && textMessage.Role == Role.Assistant)
+                    var messages = await userProxy.InitiateChatAsync(
+                        receiver: this,
+                        message: extractedText,
+                        maxRound: 1);
+
+                    string aiJson = null;
+                    foreach (var message in messages)
                     {
-                        aiJson = textMessage.Content;
+                        if (message is TextMessage textMessage && textMessage.Role == Role.Assistant)
+                        {
+                            aiJson = textMessage.Content;
+                        }
                     }
+
+                    var imageExtractionResult = System.Text.Json.JsonSerializer.Deserialize<ImageExtractionResult>(aiJson);
+                    return imageExtractionResult;
                 }
-
-                if (string.IsNullOrWhiteSpace(aiJson))
+                catch (Exception ex) when (ex.Message.Contains("rate limit") || ex.Message.Contains("429"))
                 {
-                    Console.WriteLine("No data could be extracted from the image.");
-                    return new ChargeInfo();
+                    currentRetry++;
+                    if (currentRetry >= maxRetries)
+                    {
+                        Console.WriteLine($"Rate limit exceeded after {maxRetries} retries. Returning empty result.");
+                        return new ImageExtractionResult();
+                    }
+                    
+                    int delayMs = (int)Math.Pow(2, currentRetry) * _config.RetryDelayMs; // Use configured delay
+                    Console.WriteLine($"Rate limit hit. Retrying in {delayMs/1000} seconds... (Attempt {currentRetry}/{maxRetries})");
+                    await Task.Delay(delayMs);
                 }
-
-                using var doc = System.Text.Json.JsonDocument.Parse(aiJson);
-                var root = doc.RootElement;
-
-                var chargeInfo = new ChargeInfo
+                catch (Exception ex)
                 {
-                    PersonsEntitled = root.TryGetProperty("PersonsEntitled", out var personProp) ? personProp.GetString() : null,
-                    BriefDescription = root.TryGetProperty("BriefDescription", out var descProp) ? descProp.GetString() : null
-                };
+                    Console.WriteLine($"Unexpected error: {ex.Message}");
+                    return new ImageExtractionResult();
+                }
+            }
 
-                return chargeInfo;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error extracting data from image: " + ex.Message);
-                return new ChargeInfo();
-            }
+            return new ImageExtractionResult();
         }
-
     }
 }
