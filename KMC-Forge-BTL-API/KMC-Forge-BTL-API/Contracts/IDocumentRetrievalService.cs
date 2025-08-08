@@ -7,7 +7,7 @@ public interface IDocumentRetrievalService
     /// </summary>
     /// <param name="documentUri">The URI of the document to retrieve</param>
     /// <returns>The document as a stream</returns>
-    Task<Stream> RetrieveDocumentAsync(string documentUri);
+    Task<string> RetrieveDocumentAsync(string documentUri);
 
     /// <summary>
     /// Retrieves a document from Azure Blob Storage by portfolio ID and document type

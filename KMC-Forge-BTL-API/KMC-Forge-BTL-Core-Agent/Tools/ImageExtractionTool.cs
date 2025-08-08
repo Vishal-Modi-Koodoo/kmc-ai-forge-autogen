@@ -9,6 +9,8 @@ namespace KMC_Forge_BTL_Core_Agent.Tools
 {
     public class ImageExtractionTool : OpenAIChatAgent
     {
+        private readonly string _baseUrl = "https://find-and-update.company-information.service.gov.uk/company/";
+        
         public ImageExtractionTool(AzureOpenAIClient openAIClient, string model, string analysisPrompt)
             : base(
                 name: "image_analyzer",
