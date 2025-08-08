@@ -6,6 +6,7 @@ using KMC_Forge_BTL_Core_Agent.Agents.SubAgents;
 using KMC_Forge_BTL_Core_Agent.Tools;
 using KMC_Forge_BTL_Core_Agent.Utils;
 using KMC_Forge_BTL_Models.PDFExtractorResponse;
+using KMC_FOrge_BTL_Models.ImageDataExtractorResponse;
 using Microsoft.Extensions.Configuration;
 
 
@@ -15,6 +16,7 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
     {
         private readonly PdfExtractionTool _pdfExtractionTool;
         private readonly MiddlewareStreamingAgent<OpenAIChatAgent> _pdfAnalyserAgent;
+        private readonly MiddlewareStreamingAgent<OpenAIChatAgent> _imageAnalyserAgent;
         private readonly ImageExtractionTool _imageExtractionTool;
         private readonly DocumentRetrievalTool _documentRetrievalTool;
         private readonly string _openAIKey = "";
@@ -33,15 +35,16 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             }
 
             // Read the analysis prompt from a text file
-            string analysisPrompt = File.ReadAllText("Prompts/PDFExtractorPrompt.txt");
+            string pdfAnalysisPrompt = File.ReadAllText("Prompts/PDFExtractorPrompt.txt");
+            string imageAnalysisPrompt = File.ReadAllText("Prompts/ImageExtractorPrompt.txt");
 
             if (_openAIClient != null)
             {
-                // Read the analysis prompt from a text file
-                _pdfAnalyserAgent = new PDFAnalyserAgent(_openAIClient, _model, analysisPrompt).RegisterMessageConnector().RegisterPrintMessage(); 
+                _pdfAnalyserAgent = new DocumentAnalyserAgent(_openAIClient, _model, pdfAnalysisPrompt, "pdf_analyzer").RegisterMessageConnector().RegisterPrintMessage(); 
+                _imageAnalyserAgent = new DocumentAnalyserAgent(_openAIClient, _model, pdfAnalysisPrompt, "image_analyzer").RegisterMessageConnector().RegisterPrintMessage(); 
+                
                 _pdfExtractionTool = new PdfExtractionTool(_pdfAnalyserAgent);
-                // _imageExtractionTool = new ImageExtractionTool();
-             //   _documentRetrievalTool = new DocumentRetrievalTool();
+                _imageExtractionTool = new ImageExtractionTool(_imageAnalyserAgent);
             }
         }
 
@@ -51,11 +54,10 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             return await _pdfExtractionTool.ExtractDataAsync(path);
         }
 
-        public async Task<string> ExtractDetailsFromImageAsync(byte[] imageBytes)
+        public async Task<ChargeInfo> ExtractDetailsFromImageAsync(string path)
         {
             // Delegate image extraction to the tool
-            //return await _imageExtractionTool.ExtractDetailsAsync(imageBytes);
-            return "";
+            return await _imageExtractionTool.ExtractDataAsync(path);
         }
 
         public async Task<Stream> ExtractFileFromBlobAsync(string path)
