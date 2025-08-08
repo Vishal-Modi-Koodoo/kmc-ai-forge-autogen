@@ -21,7 +21,7 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             return result;
         }
 
-        public async Task<string> OrchestrateDocumentRetrievalAsync(string filePath)
+        public async Task<string> StartDocumentRetrieval(string filePath)
         {
             // Orchestrate the file retrieval by calling DocumentValidatorAgent
             var result = await _documentValidatorAgent.ExtractFileFromBlobAsync(filePath);

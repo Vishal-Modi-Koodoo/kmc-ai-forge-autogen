@@ -41,7 +41,7 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                 _pdfAnalyserAgent = new PDFAnalyserAgent(_openAIClient, _model, analysisPrompt).RegisterMessageConnector().RegisterPrintMessage(); 
                 _pdfExtractionTool = new PdfExtractionTool(_pdfAnalyserAgent);
                 // _imageExtractionTool = new ImageExtractionTool();
-             //   _documentRetrievalTool = new DocumentRetrievalTool();
+               _documentRetrievalTool = new DocumentRetrievalTool();
             }
         }
 
