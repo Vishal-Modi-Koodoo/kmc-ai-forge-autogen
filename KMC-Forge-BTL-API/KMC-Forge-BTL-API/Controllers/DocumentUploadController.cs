@@ -87,13 +87,14 @@ public class DocumentUploadController : ControllerBase
             var firstDocumentUri = uploadedDocuments.FirstOrDefault()?.FilePath;
             if (!string.IsNullOrEmpty(firstDocumentUri))
             {
-                var fileStream = await leadPortfolioAgent.OrchestrateDocumentValidationAsync("/Users/Monish.Koyott/Desktop/KMC-AI-Forge-BTL/kmc-ai-forge-autogen/KMC-Forge-BTL-API/KMC-Forge-BTL-Core-Agent/UploadedFiles/testdata.pdf");
+                      var fileStream = await leadPortfolioAgent.OrchestrateDocumentValidationAsync(firstDocumentUri);
+                    //   var fileStream = await leadPortfolioAgent.OrchestrateDocumentValidationAsync("/Users/Monish.Koyott/Desktop/KMC-AI-Forge-BTL/kmc-ai-forge-autogen/KMC-Forge-BTL-API/KMC-Forge-BTL-Core-Agent/UploadedFiles/testdata.pdf");
             }
 
             return Ok(new PortfolioUploadResponse
             {
                 PortfolioId = portfolioId,
-                ValidationId = validationResult.ValidationId,
+                // ValidationId = validationResult.ValidationId,
                 EstimatedProcessingTime = "3-5 minutes",
                 Status = "Processing",
                 UploadedDocuments = uploadedDocuments

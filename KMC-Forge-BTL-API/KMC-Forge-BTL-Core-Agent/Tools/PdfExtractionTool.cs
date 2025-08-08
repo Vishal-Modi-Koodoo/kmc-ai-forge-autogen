@@ -7,14 +7,16 @@ using KMC_Forge_BTL_Models.PDFExtractorResponse;
 
 namespace KMC_Forge_BTL_Core_Agent.Tools
 {
-    public class PdfExtractionTool : OpenAIChatAgent
+    public class PdfExtractionTool
     {
+        private readonly OpenAIChatAgent _aiAgent;
+
         public PdfExtractionTool(AzureOpenAIClient openAIClient, string model, string analysisPrompt)
-            : base(
+        {
+            _aiAgent = new OpenAIChatAgent(
                 name: "pdf_analyzer",
                 systemMessage: analysisPrompt,
-                chatClient: openAIClient.GetChatClient(model))
-        {
+                chatClient: openAIClient.GetChatClient(model));
         }
 
         public async Task<CompanyInfo> ExtractDataAsync(string path)
@@ -38,7 +40,7 @@ namespace KMC_Forge_BTL_Core_Agent.Tools
 
             try{
               var messages = await userProxy.InitiateChatAsync(
-                 receiver: this,
+                 receiver: _aiAgent,
                  message: extractedText,
                  maxRound: 1);
 

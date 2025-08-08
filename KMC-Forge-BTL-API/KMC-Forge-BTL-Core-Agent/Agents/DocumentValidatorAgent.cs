@@ -46,9 +46,9 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             return await _imageExtractionTool.ExtractDetailsAsync(imageBytes);
         }
 
-        public async Task<Stream> ExtractFileFromBlobAsync(string path)
+        public async Task<string> ExtractFileFromBlobAsync(string path)
         {
-            return await _documentRetrievalTool.RetrieveDocumentAsStreamAsync(path);
+            return await _documentRetrievalTool.RetrieveDocumentAsync(path);
         }
     }
 }
