@@ -16,11 +16,11 @@ namespace KMC_Forge_BTL_Core_Agent.Tools
             _pDFAnalyserAgent = pDFAnalyserAgent;
         }
 
-        public async Task<CompanyInfo> ExtractDataAsync(string path)
+        public async Task<CompanyInfo> ExtractDataAsync(string fileContent)
         {
-            string extractedText = PdfExtractor.ExtractTextFromPdf(path);
+            // string extractedText = PdfExtractor.ExtractTextFromPdf(fileContent);
 
-            if (string.IsNullOrWhiteSpace(extractedText))
+            if (string.IsNullOrWhiteSpace(fileContent))
             {
                 Console.WriteLine("No text could be extracted from the PDF.");
                 return new CompanyInfo();
@@ -39,7 +39,7 @@ namespace KMC_Forge_BTL_Core_Agent.Tools
             {
                 var messages = await userProxy.InitiateChatAsync(
                     receiver: _pDFAnalyserAgent,
-                    message: extractedText,
+                    message: fileContent,
                     maxRound: 1);
 
                 string aiJson = null;

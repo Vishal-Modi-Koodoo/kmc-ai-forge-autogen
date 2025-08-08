@@ -76,9 +76,6 @@ public class DocumentUploadController : ControllerBase
                 }
             }
 
-            // Trigger agent-based validation workflow
-            //var validationResult = await _validationService.StartValidation(portfolioId, uploadedDocuments);
-
             _logger.LogInformation("Portfolio validation started for {PortfolioId} with {DocumentCount} documents", 
                 portfolioId, uploadedDocuments.Count);
 
@@ -88,7 +85,8 @@ public class DocumentUploadController : ControllerBase
            var firstDocumentUri = uploadedDocuments.FirstOrDefault()?.FilePath;
             if (!string.IsNullOrEmpty(firstDocumentUri))
             {
-               var fileStream = await leadPortfolioAgent.StartDocumentRetrieval(firstDocumentUri);
+               var fileContent = await leadPortfolioAgent.StartDocumentRetrieval("");
+               var companyInfo = await leadPortfolioAgent.StartProcessing(fileContent);
             }
             return Ok(new PortfolioUploadResponse
             {

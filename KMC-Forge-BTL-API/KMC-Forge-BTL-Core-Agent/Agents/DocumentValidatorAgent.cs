@@ -45,10 +45,10 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             }
         }
 
-        public async Task<CompanyInfo> ExtractDataFromPdfAsync(string path)
+        public async Task<CompanyInfo> ExtractDataFromContentAsync(string content)
         {
-            // Delegate PDF extraction to the tool
-            return await _pdfExtractionTool.ExtractDataAsync(path);
+            // Delegate data extraction to the tool
+            return await _pdfExtractionTool.ExtractDataAsync(content);
         }
 
         public async Task<string> ExtractDetailsFromImageAsync(byte[] imageBytes)

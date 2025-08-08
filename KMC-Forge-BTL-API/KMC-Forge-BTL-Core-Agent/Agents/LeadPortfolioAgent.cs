@@ -14,10 +14,10 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             _documentValidatorAgent = new DocumentValidatorAgent(configuration);
         }
 
-        public async Task<CompanyInfo> StartProcessing(string filePath)
+        public async Task<CompanyInfo> StartProcessing(string fileContent)
         {
             // Orchestrate the PDF extraction by calling DocumentValidatorAgent
-            var result = await _documentValidatorAgent.ExtractDataFromPdfAsync(filePath);
+            var result = await _documentValidatorAgent.ExtractDataFromContentAsync(fileContent);
             return result;
         }
 
