@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using KMC_AI_Forge_BTL_Agent.Contracts;
 using KMC_AI_Forge_BTL_Agent.Models;
 using KMC_Forge_BTL_Core_Agent.Agents;
+using Microsoft.Extensions.Configuration;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -10,11 +11,13 @@ public class DocumentUploadController : ControllerBase
     private readonly IDocumentStorageService _documentStorage;
     private readonly IPortfolioValidationService _validationService;
     private readonly ILogger<DocumentUploadController> _logger;
+    private readonly IConfiguration _configuration;
 
-    public DocumentUploadController(IDocumentStorageService documentStorage, IPortfolioValidationService validationService, ILogger<DocumentUploadController> logger){
+    public DocumentUploadController(IDocumentStorageService documentStorage, IPortfolioValidationService validationService, ILogger<DocumentUploadController> logger, IConfiguration configuration){
         _documentStorage = documentStorage;
         _validationService = validationService;
         _logger = logger;
+        _configuration = configuration;
     }
 
     [HttpPost("upload-portfolio")]
@@ -79,7 +82,7 @@ public class DocumentUploadController : ControllerBase
             _logger.LogInformation("Portfolio validation started for {PortfolioId} with {DocumentCount} documents", 
                 portfolioId, uploadedDocuments.Count);
 
-            LeadPortfolioAgent leadPortfolioAgent = new LeadPortfolioAgent();
+            LeadPortfolioAgent leadPortfolioAgent = new LeadPortfolioAgent(_configuration);
             // Use the first uploaded document URI for retrieval
             var firstDocumentUri = uploadedDocuments.FirstOrDefault()?.FilePath;
             if (!string.IsNullOrEmpty(firstDocumentUri))

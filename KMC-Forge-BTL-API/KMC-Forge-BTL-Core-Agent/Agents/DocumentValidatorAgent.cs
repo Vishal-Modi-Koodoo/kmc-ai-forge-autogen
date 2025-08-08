@@ -2,6 +2,7 @@ using Azure;
 using KMC_Forge_BTL_Core_Agent.Tools;
 using KMC_Forge_BTL_Models.PDFExtractorResponse;
 using KMC_Forge_BTL_Core_Agent.Utils;
+using Microsoft.Extensions.Configuration;
 
 namespace KMC_Forge_BTL_Core_Agent.Agents
 {
@@ -10,33 +11,25 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
         private readonly PdfExtractionTool _pdfExtractionTool;
         private readonly ImageExtractionTool _imageExtractionTool;
         private readonly DocumentRetrievalTool _documentRetrievalTool;
-        private static string _openAIKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? "";
-        private static string _model = "gpt-4.1";
-        private static Azure.AI.OpenAI.AzureOpenAIClient? _openAIClient;
+        private readonly string _openAIKey;
+        private readonly string _model = "gpt-4.1";
+        private readonly Azure.AI.OpenAI.AzureOpenAIClient _openAIClient;
 
-        public DocumentValidatorAgent()
+        public DocumentValidatorAgent(IConfiguration configuration)
         {
-            // Initialize OpenAI client if API key is available
-            if (!string.IsNullOrWhiteSpace(_openAIKey))
-            {
-                _openAIClient = new Azure.AI.OpenAI.AzureOpenAIClient(
-                    new Uri("https://kmc-ai-forge.openai.azure.com/"),
-                    new AzureKeyCredential(_openAIKey)
-                );
-            }
+            // Get OpenAI API key from configuration
+            _openAIKey = configuration["OpenAI:ApiKey"] ?? throw new ArgumentNullException("OpenAI:ApiKey");
+            
+            // Initialize OpenAI client
+            _openAIClient = new Azure.AI.OpenAI.AzureOpenAIClient(
+                new Uri("https://kmc-ai-forge.openai.azure.com/"),
+                new AzureKeyCredential(_openAIKey)
+            );
 
             // Read the analysis prompt from a text file
             string analysisPrompt = System.IO.File.ReadAllText("/Users/Monish.Koyott/Desktop/KMC-AI-Forge-BTL/kmc-ai-forge-autogen/KMC-Forge-BTL-API/KMC-Forge-BTL-Core-Agent/Prompts/PDFExtractorPrompt.txt");
             
-            if (_openAIClient != null)
-            {
-                _pdfExtractionTool = new PdfExtractionTool(_openAIClient, _model, analysisPrompt);
-            }
-            else
-            {
-                throw new InvalidOperationException("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.");
-            }
-            
+            _pdfExtractionTool = new PdfExtractionTool(_openAIClient, _model, analysisPrompt);
             _imageExtractionTool = new ImageExtractionTool();
             _documentRetrievalTool = new DocumentRetrievalTool();
         }
