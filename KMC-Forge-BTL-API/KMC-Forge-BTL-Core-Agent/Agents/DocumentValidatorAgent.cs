@@ -27,16 +27,17 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
  );
             }
 
+
             // Read the analysis prompt from a text file
-            string analysisPrompt = System.IO.File.ReadAllText("/Users/Monish.Koyott/Desktop/KMC-AI-Forge-BTL/kmc-ai-forge-autogen/KMC-Forge-BTL-API/KMC-Forge-BTL-Core-Agent/Prompts/PDFExtractorPrompt.txt");
-            
+            string analysisPrompt = File.ReadAllText("Prompts/PDFExtractorPrompt.txt");
+
             if (_openAIClient != null)
-        {
-            // Read the analysis prompt from a text file
-            string analysisPrompt = System.IO.File.ReadAllText("analysisPrompt.txt");
-            _pdfExtractionTool = new PdfExtractionTool(_openAIClient, _model, analysisPrompt);
-           // _imageExtractionTool = new ImageExtractionTool();
-            _documentRetrievalTool = new DocumentRetrievalTool();
+            {
+                // Read the analysis prompt from a text file
+                _pdfExtractionTool = new PdfExtractionTool(_openAIClient, _model, analysisPrompt);
+                // _imageExtractionTool = new ImageExtractionTool();
+                _documentRetrievalTool = new DocumentRetrievalTool();
+            }
         }
 
         public async Task<CompanyInfo> ExtractDataFromPdfAsync(string path)

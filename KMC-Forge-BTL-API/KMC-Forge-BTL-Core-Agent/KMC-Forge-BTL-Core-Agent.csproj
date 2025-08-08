@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <Folder Include="Agents\" />
-    <Folder Include="Prompts\" />
     <Folder Include="Tools\" />
   </ItemGroup>
 
@@ -18,6 +17,7 @@
     <PackageReference Include="Azure.AI.Vision.ImageAnalysis" Version="1.0.0" />
     <PackageReference Include="Azure.Core" Version="1.47.1" />
     <PackageReference Include="itext7" Version="9.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0-preview.6.25358.103" />
   </ItemGroup>
 
   <ItemGroup>

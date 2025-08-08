@@ -3,7 +3,7 @@ using AutoGen.Core;
 using AutoGen.OpenAI;
 using Azure.AI.OpenAI;
 using KMC_Forge_BTL_Core_Agent.Utils;
-using KMC_FOrge_BTL_Models.PDFExtractorResponse;
+using KMC_Forge_BTL_Models.PDFExtractorResponse;
 
 namespace KMC_Forge_BTL_Core_Agent.Tools
 {
