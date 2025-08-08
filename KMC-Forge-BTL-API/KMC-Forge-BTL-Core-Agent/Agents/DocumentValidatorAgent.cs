@@ -21,7 +21,7 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             // Read the analysis prompt from a text file
             string analysisPrompt = System.IO.File.ReadAllText("analysisPrompt.txt");
             _pdfExtractionTool = new PdfExtractionTool(_openAIClient, _model, analysisPrompt);
-            _imageExtractionTool = new ImageExtractionTool();
+           // _imageExtractionTool = new ImageExtractionTool();
         }
 
         public async Task<CompanyInfo> ExtractDataFromPdfAsync(string path)
@@ -33,7 +33,8 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
         public async Task<string> ExtractDetailsFromImageAsync(byte[] imageBytes)
         {
             // Delegate image extraction to the tool
-            return await _imageExtractionTool.ExtractDetailsAsync(imageBytes);
+            //return await _imageExtractionTool.ExtractDetailsAsync(imageBytes);
+            return "";
         }
 
     }
