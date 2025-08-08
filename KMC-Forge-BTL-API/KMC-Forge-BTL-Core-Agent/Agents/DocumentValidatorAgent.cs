@@ -2,6 +2,7 @@ using Azure;
 using KMC_Forge_BTL_Core_Agent.Tools;
 using KMC_Forge_BTL_Models.PDFExtractorResponse;
 using KMC_Forge_BTL_Core_Agent.Utils;
+using Microsoft.Extensions.Configuration;
 
 
 namespace KMC_Forge_BTL_Core_Agent.Agents
@@ -11,11 +12,11 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
         private readonly PdfExtractionTool _pdfExtractionTool;
         private readonly ImageExtractionTool _imageExtractionTool;
         private readonly DocumentRetrievalTool _documentRetrievalTool;
-        private static string _openAIKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? "";
-        private static string _model = "gpt-4.1";
-        private static Azure.AI.OpenAI.AzureOpenAIClient? _openAIClient;
+        private readonly string _openAIKey;
+        private readonly string _model = "gpt-4.1";
+        private readonly Azure.AI.OpenAI.AzureOpenAIClient _openAIClient;
 
-        public DocumentValidatorAgent()
+        public DocumentValidatorAgent(IConfiguration configuration)
         {
             // Initialize OpenAI client if API key is available
             if (!string.IsNullOrWhiteSpace(_openAIKey))

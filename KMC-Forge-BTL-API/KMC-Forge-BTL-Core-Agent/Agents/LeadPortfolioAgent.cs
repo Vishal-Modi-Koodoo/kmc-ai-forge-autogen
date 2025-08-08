@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using KMC_Forge_BTL_Core_Agent.Agents;
 using KMC_Forge_BTL_Models.PDFExtractorResponse;
+using Microsoft.Extensions.Configuration;
 
 namespace KMC_Forge_BTL_Core_Agent.Agents
 {
@@ -8,9 +9,9 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
     {
         private readonly DocumentValidatorAgent _documentValidatorAgent;
 
-        public LeadPortfolioAgent()
+        public LeadPortfolioAgent(IConfiguration configuration)
         {
-            _documentValidatorAgent = new DocumentValidatorAgent();
+            _documentValidatorAgent = new DocumentValidatorAgent(configuration);
         }
 
         public async Task<CompanyInfo> OrchestrateDocumentValidationAsync(string filePath)
