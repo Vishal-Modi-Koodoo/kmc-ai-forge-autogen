@@ -18,7 +18,7 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
         public DocumentValidatorAgent(IConfiguration configuration)
         {
             // Get OpenAI API key from configuration
-            _openAIKey = configuration["OpenAI:ApiKey"] ?? throw new ArgumentNullException("OpenAI:ApiKey");
+            _openAIKey = configuration["AzureAI:ApiKey"] ?? throw new ArgumentNullException("AzureAI:ApiKey");
             
             // Initialize OpenAI client
             _openAIClient = new Azure.AI.OpenAI.AzureOpenAIClient(
