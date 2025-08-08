@@ -26,7 +26,7 @@ namespace KMC_Forge_BTL_Core_Agent.Utils
         /// </summary>
         /// <param name="documentUri">The URI of the document to retrieve</param>
         /// <returns>The document content as a byte array</returns>
-        public async Task<byte[]> RetrieveDocumentAsync(string documentUri)
+        public async Task<string> RetrieveDocumentAsync(string documentUri)
         {
             try
             {
@@ -44,7 +44,7 @@ namespace KMC_Forge_BTL_Core_Agent.Utils
                 }
 
                 // Read the document content
-                var documentBytes = await response.Content.ReadAsByteArrayAsync();
+                var documentBytes = await response.Content.ReadAsStringAsync();
                 return documentBytes;
             }
             catch (Exception ex)
@@ -158,7 +158,7 @@ namespace KMC_Forge_BTL_Core_Agent.Utils
         /// </summary>
         /// <param name="documentUri">The URI of the document to download</param>
         /// <returns>The document content as a byte array</returns>
-        public async Task<byte[]> DownloadDocumentWithValidationAsync(string documentUri)
+        public async Task<string> DownloadDocumentWithValidationAsync(string documentUri)
         {
             try
             {
@@ -183,7 +183,7 @@ namespace KMC_Forge_BTL_Core_Agent.Utils
         /// <param name="documentUri">The URI of the document to download</param>
         /// <param name="localFilePath">The local file path to save the document</param>
         /// <returns>The document content as a byte array</returns>
-        public async Task<byte[]> DownloadDocumentToFileAsync(string documentUri, string localFilePath)
+        public async Task<string> DownloadDocumentToFileAsync(string documentUri, string localFilePath)
         {
             try
             {
@@ -198,7 +198,7 @@ namespace KMC_Forge_BTL_Core_Agent.Utils
                 }
                 
                 // Save the document to local file
-                await File.WriteAllBytesAsync(localFilePath, documentBytes);
+                await File.WriteAllTextAsync(localFilePath, documentBytes);
                 
                 return documentBytes;
             }

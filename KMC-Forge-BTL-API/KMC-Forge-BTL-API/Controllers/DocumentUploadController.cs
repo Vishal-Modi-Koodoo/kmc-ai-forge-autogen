@@ -91,6 +91,12 @@ public class DocumentUploadController : ControllerBase
             //    var fileStream = await leadPortfolioAgent.StartProcessing("/Users/Monish.Koyott/Desktop/KMC-AI-Forge-BTL/kmc-ai-forge-autogen/KMC-Forge-BTL-API/KMC-Forge-BTL-Core-Agent/UploadedFiles/testdata.pdf");
             //}
 
+            // await leadPortfolioAgent.StartProcessing("C:/Users/VishalModi/Desktop/testdata.pdf");
+           var firstDocumentUri = uploadedDocuments.FirstOrDefault()?.FilePath;
+            if (!string.IsNullOrEmpty(firstDocumentUri))
+            {
+               var fileStream = await leadPortfolioAgent.StartDocumentRetrieval(firstDocumentUri);
+            }
             return Ok(new PortfolioUploadResponse
             {
                 PortfolioId = portfolioId,

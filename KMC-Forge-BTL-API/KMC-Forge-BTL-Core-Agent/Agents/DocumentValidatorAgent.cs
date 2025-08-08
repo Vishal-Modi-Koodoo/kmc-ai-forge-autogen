@@ -25,14 +25,14 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
 
         public DocumentValidatorAgent(IConfiguration configuration)
         {
-            // Initialize OpenAI client if API key is available
-            if (!string.IsNullOrWhiteSpace(_openAIKey))
-            {
-                _openAIClient = new Azure.AI.OpenAI.AzureOpenAIClient(
-     new Uri("https://kmc-ai-forge.openai.azure.com/"),
-     new AzureKeyCredential(_openAIKey)
- );
-            }
+            // Get OpenAI API key from configuration
+            _openAIKey = configuration["AzureOpenAI:ApiKey"] ?? throw new ArgumentNullException("AzureOpenAI:ApiKey");
+            
+            // Initialize OpenAI client
+            _openAIClient = new Azure.AI.OpenAI.AzureOpenAIClient(
+                new Uri("https://kmc-ai-forge.openai.azure.com/"),
+                new AzureKeyCredential(_openAIKey)
+            );
 
             // Read the analysis prompt from a text file
             string pdfAnalysisPrompt = File.ReadAllText("Prompts/PDFExtractorPrompt.txt");
@@ -60,9 +60,9 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             return await _imageExtractionTool.ExtractDataAsync(path);
         }
 
-        public async Task<Stream> ExtractFileFromBlobAsync(string path)
+        public async Task<string> ExtractFileFromBlobAsync(string path)
         {
-            return await _documentRetrievalTool.RetrieveDocumentAsStreamAsync(path);
+            return await _documentRetrievalTool.RetrieveDocumentAsync(path);
         }
     }
 }

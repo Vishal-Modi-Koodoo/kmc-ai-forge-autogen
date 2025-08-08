@@ -1,5 +1,9 @@
 using Azure.Storage.Blobs;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas.Parser;
+using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using KMC_AI_Forge_BTL_Agent.Contracts;
+
 namespace KMC_Forge_BTL_API.Services;
 
 public class DocumentRetrievalService : IDocumentRetrievalService
@@ -13,8 +17,9 @@ public class DocumentRetrievalService : IDocumentRetrievalService
         _containerName = configuration["AzureBlobStorage:ContainerName"] ?? throw new ArgumentNullException("AzureBlobStorage:ContainerName");
     }
 
-    public async Task<Stream> RetrieveDocumentAsync(string documentUri)
+    public async Task<string> RetrieveDocumentAsync(string documentUri)
     {
+        string text = "";
         try
         {
             var blobServiceClient = new BlobServiceClient(_connectionString);
@@ -32,12 +37,27 @@ public class DocumentRetrievalService : IDocumentRetrievalService
             }
 
             // Download blob to memory stream
-            var memoryStream = new MemoryStream();
-            await blobClient.DownloadToAsync(memoryStream);
+        using (HttpClient httpClient = new HttpClient())
+        using (Stream pdfStream = await httpClient.GetStreamAsync(uri))
+        using (MemoryStream memoryStream = new MemoryStream())
+        {
+            // Copy to memory stream to allow seeking
+            await pdfStream.CopyToAsync(memoryStream);
             memoryStream.Position = 0;
-            
-            return memoryStream;
+
+            using (PdfReader reader = new PdfReader(memoryStream))
+            using (PdfDocument pdf = new PdfDocument(reader))
+            {
+                for (int i = 1; i <= pdf.GetNumberOfPages(); i++)
+                {
+                    var strategy = new SimpleTextExtractionStrategy();
+                    text = PdfTextExtractor.GetTextFromPage(pdf.GetPage(i), strategy);
+                    Console.WriteLine($"Page {i}:\n{text}\n");
+                }
+            }
         }
+        return text;
+    }
         catch (Exception ex)
         {
             throw new InvalidOperationException($"Failed to retrieve document: {ex.Message}", ex);

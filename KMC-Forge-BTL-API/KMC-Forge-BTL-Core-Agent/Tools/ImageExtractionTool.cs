@@ -7,6 +7,7 @@ namespace KMC_Forge_BTL_Core_Agent.Tools
 {
     public class ImageExtractionTool
     {
+        private readonly string _baseUrl = "https://find-and-update.company-information.service.gov.uk/company/";
         private readonly MiddlewareStreamingAgent<OpenAIChatAgent> _imageAnalyserAgent;
 
         // Constructor to initialize the PDFAnalyserAgent
