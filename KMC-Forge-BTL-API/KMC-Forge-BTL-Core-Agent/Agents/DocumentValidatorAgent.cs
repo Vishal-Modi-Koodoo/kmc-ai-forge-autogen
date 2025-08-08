@@ -43,7 +43,7 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                 _imageAnalyserAgent = new DocumentAnalyserAgent(_openAIClient, config.AzureOpenAIModel, imageAnalysisPrompt, "image_analyzer").RegisterMessageConnector().RegisterPrintMessage(); 
                 
                 _pdfExtractionTool = new PdfExtractionTool(_pdfAnalyserAgent);
-                _imageExtractionTool = new ImageExtractionTool(_imageAnalyserAgent);
+                _imageExtractionTool = new ImageExtractionTool();
             }
         }
 
