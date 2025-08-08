@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace KMC_FOrge_BTL_Models.PDFExtractorResponse
+namespace KMC_Forge_BTL_Models.PDFExtractorResponse
 {
     public class CompanyInfo
     {
