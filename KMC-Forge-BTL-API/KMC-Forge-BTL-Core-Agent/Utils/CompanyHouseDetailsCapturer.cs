@@ -1,29 +1,20 @@
 using Microsoft.Playwright;
 
-namespace Utilities
+namespace KMC_Forge_BTL_Core_Agent.Utils
 {
     public class CompanyHouseDetailsCapturer
     {
         private readonly string _baseUrl = "https://find-and-update.company-information.service.gov.uk/company/03489004";
         private readonly string[] _tabNames = ["Overview", "Filing History", "People", "Charges"];
-        private readonly string _companyNumber = "03489004";
+        private readonly string _companyNumber;
         private readonly string _companyName = "PARATUS AMC LIMITED";
-        
-        // Agent prompts and responses
-        private readonly Dictionary<string, string> _prompts = new()
-        {
-            ["greeting"] = "🤖 Hello! I'm your Screenshot Agent. I can capture screenshots of the 4 tabs and individual charge links. How can I help you today?",
-            ["ready"] = "🤖 I'm ready to capture screenshots. Just say 'capture' or 'take screenshots' to begin.",
-            ["processing"] = "🤖 Processing your request... I'll navigate to the page and capture screenshots of all 4 tabs.",
-            ["success"] = "🎉 Screenshot capture completed successfully! All tabs have been captured and saved.",
-            ["error"] = "❌ I encountered an error while capturing screenshots. Please try again.",
-            ["help"] = "📋 I can help you with:\n• Capturing screenshots of all 4 tabs\n• Capturing individual charge links\n• Complete capture (all tabs + charge links)\n• Status updates\n\nCommands: 'capture', 'capture charges', 'capture all', 'help', 'status', 'exit'"
-        };
 
-        public async Task<string> CaptureAllTabsAsync()
+        public CompanyHouseDetailsCapturer(string companyNumber)
         {
-            Console.WriteLine(_prompts["processing"]);
-            
+            _companyNumber = companyNumber;
+        }
+        public async Task<string> CaptureAllTabsAsync()
+        {            
             try
             {
                 // Create organized folder structure with safe folder names
@@ -107,7 +98,7 @@ namespace Utilities
                 // Create summary file in company folder
                 await CreateSummaryFile(companyPath, results);
                 
-                var summary = $"\n🎉 {_prompts["success"]}\n" +
+                var summary = $"\n🎉 {"success"}\n" +
                              $"📁 Organized folder structure created:\n" +
                              $"   Screenshots/{_companyNumber}/\n" +
                              $"   ├── Overview/\n" +
@@ -121,7 +112,7 @@ namespace Utilities
             }
             catch (Exception ex)
             {
-                var errorMessage = $"{_prompts["error"]} Error: {ex.Message}";
+                var errorMessage = $"{"error"} Error: {ex.Message}";
                 Console.WriteLine(errorMessage);
                 return errorMessage;
             }
@@ -507,11 +498,6 @@ namespace Utilities
             return Task.FromResult(status);
         }
 
-        public string GetGreeting()
-        {
-            return _prompts["greeting"];
-        }
-
         public async Task<string> CaptureAllIncludingChargesAsync()
         {
             Console.WriteLine("🤖 Agent: Processing complete capture request... I'll capture all tabs AND individual charge links.");
@@ -526,24 +512,21 @@ namespace Utilities
                 Console.WriteLine("\n📋 Step 2: Capturing individual charge links...");
                 var chargesResult = await CaptureChargeLinksAsync();
                 
-                // Create combined summary
-                var combinedSummary = $"\n🎉 COMPLETE CAPTURE FINISHED!\n" +
-                                     $"================================\n" +
-                                     $"✅ All tabs captured successfully\n" +
-                                     $"✅ Individual charge links captured successfully\n" +
-                                     $"📁 All files saved in: Screenshots/{_companyNumber}/\n" +
-                                     $"📄 Summary files created in respective folders\n\n" +
-                                     $"📋 Tabs Result:\n{tabsResult}\n\n" +
-                                     $"📋 Charges Result:\n{chargesResult}";
+                // Get the screenshots folder path
+                var screenshotsBasePath = Path.Combine(Directory.GetCurrentDirectory(), "Screenshots");
+                var companyPath = Path.Combine(screenshotsBasePath, _companyNumber);
                 
-                Console.WriteLine(combinedSummary);
-                return combinedSummary;
+                Console.WriteLine($"\n🎉 COMPLETE CAPTURE FINISHED!");
+                Console.WriteLine($"📁 Screenshots saved in: {companyPath}");
+                
+                return companyPath;
             }
             catch (Exception ex)
             {
                 var errorMessage = $"❌ I encountered an error during complete capture. Error: {ex.Message}";
                 Console.WriteLine(errorMessage);
-                return errorMessage;
+                // Return empty string on error to indicate failure
+                return string.Empty;
             }
         }
     }

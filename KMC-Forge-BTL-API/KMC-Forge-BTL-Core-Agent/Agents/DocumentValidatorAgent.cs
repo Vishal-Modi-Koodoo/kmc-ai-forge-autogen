@@ -6,10 +6,10 @@ using KMC_Forge_BTL_Core_Agent.Agents.SubAgents;
 using KMC_Forge_BTL_Core_Agent.Tools;
 using KMC_Forge_BTL_Core_Agent.Utils;
 using KMC_Forge_BTL_Models.PDFExtractorResponse;
-using KMC_FOrge_BTL_Models.ImageDataExtractorResponse;
 using KMC_Forge_BTL_Models.DocumentIdentificationResponse;
 using Microsoft.Extensions.Configuration;
 using KMC_Forge_BTL_Configurations;
+using KMC_Forge_BTL_Models.ImageDataExtractorResponse;
 
 namespace KMC_Forge_BTL_Core_Agent.Agents
 {
@@ -159,10 +159,8 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                     {
                         // Extract PDF data using the already extracted content
                         pdfData = await _pdfExtractionTool.ExtractDataAsync(documentContent);
-                        if (pdfData != null)
-                        {
-                            
-                        }
+                        CompanyHouseDetailsCapturer companyHouseDetailsCapturer = new CompanyHouseDetailsCapturer("03489004");
+                        var path = await companyHouseDetailsCapturer.CaptureAllIncludingChargesAsync();
                     }
                     else if (filePath.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || 
                              filePath.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) || 
@@ -224,10 +222,11 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             }
         }
 
-        public async Task<CompanyInfo> ExtractDataFromContentAsync(string content)
+        public async Task<CompanyInfo> ExtractDataFromFileAsync(string filePath)
         {
             // Delegate data extraction to the tool
-            return await _pdfExtractionTool.ExtractDataAsync(content);
+            string fileContent = PdfExtractor.ExtractTextFromPdf(filePath);
+            return await _pdfExtractionTool.ExtractDataAsync(fileContent);
         }
 
         public async Task<ImageExtractionResult> ExtractDetailsFromImageAsync(string path)
@@ -249,7 +248,7 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
         public double Confidence { get; set; }
         public string DocumentContent { get; set; } = "";
         public KMC_Forge_BTL_Models.PDFExtractorResponse.CompanyInfo? PdfData { get; set; }
-        public KMC_FOrge_BTL_Models.ImageDataExtractorResponse.ImageExtractionResult? ImageData { get; set; }
+        public ImageExtractionResult? ImageData { get; set; }
         public string FilePath { get; set; } = "";
         public string FileName { get; set; } = "";
         public long FileSize { get; set; }
