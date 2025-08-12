@@ -74,7 +74,7 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                     {
                         // Extract PDF data
                         pdfData = await _pdfExtractionTool.ExtractDataAsync(filePath);
-                        documentContent = await _documentRetrievalTool.RetrieveDocumentAsync(filePath);
+                       // documentContent = await _documentRetrievalTool.RetrieveDocumentAsync(filePath);
                     }
                     else if (filePath.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || 
                              filePath.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) || 
@@ -82,12 +82,12 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                     {
                         // Extract image data
                         imageData = await _imageExtractionTool.ExtractDataAsync(filePath);
-                        documentContent = await _documentRetrievalTool.RetrieveDocumentAsync(filePath);
+                        //documentContent = await _documentRetrievalTool.RetrieveDocumentAsync(filePath);
                     }
                     else
                     {
                         // For other file types, just retrieve content
-                        documentContent = await _documentRetrievalTool.RetrieveDocumentAsync(filePath);
+                       // documentContent = await _documentRetrievalTool.RetrieveDocumentAsync(filePath);
                     }
                     
                     return new DocumentProcessingResult
