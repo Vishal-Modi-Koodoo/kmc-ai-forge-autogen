@@ -2,7 +2,7 @@ using Microsoft.Playwright;
 
 namespace Utilities
 {
-    public class GetCompanyHouseDetails
+    public class CompanyHouseDetailsCapturer
     {
         private readonly string _baseUrl = "https://find-and-update.company-information.service.gov.uk/company/03489004";
         private readonly string[] _tabNames = ["Overview", "Filing History", "People", "Charges"];
