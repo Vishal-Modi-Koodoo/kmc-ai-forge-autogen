@@ -59,35 +59,119 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
         {
             try
             {
-                // Step 1: Identify document type using AI
-                var identificationResult = await _documentIdentificationTool.IdentifyDocumentTypeFromFileAsync(filePath);
-                
-                // Step 2: Check if document type is valid (not Unknown)
+                // Step 1: Validate file exists and extract content
+                if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+                {
+                    return new DocumentProcessingResult
+                    {
+                        IsValid = false,
+                        DocumentType = KMC_Forge_BTL_Models.Enums.DocumentType.Unknown,
+                        Confidence = 0.0,
+                        DocumentContent = "",
+                        PdfData = null,
+                        ImageData = null,
+                        FilePath = filePath,
+                        FileName = fileName,
+                        FileSize = fileSize,
+                        ProcessingMessage = "File does not exist or path is invalid"
+                    };
+                }
+
+                string documentContent = "";
+                string fileExtension = Path.GetExtension(filePath).ToLower();
+
+                // Step 2: Extract text content based on file type
+                switch (fileExtension)
+                {
+                    case ".pdf":
+                        documentContent = PdfExtractor.ExtractTextFromPdf(filePath);
+                        break;
+                    case ".txt":
+                        documentContent = await File.ReadAllTextAsync(filePath);
+                        break;
+                    case ".jpg":
+                    case ".jpeg":
+                    case ".png":
+                    case ".gif":
+                    case ".bmp":
+                        // For images, we'll extract content later in the process
+                        documentContent = "";
+                        break;
+                    default:
+                        return new DocumentProcessingResult
+                        {
+                            IsValid = false,
+                            DocumentType = KMC_Forge_BTL_Models.Enums.DocumentType.Unknown,
+                            Confidence = 0.0,
+                            DocumentContent = "",
+                            PdfData = null,
+                            ImageData = null,
+                            FilePath = filePath,
+                            FileName = fileName,
+                            FileSize = fileSize,
+                            ProcessingMessage = $"Unsupported file type: {fileExtension}"
+                        };
+                }
+
+                // Step 3: Identify document type using AI (for text-based files)
+                DocumentIdentificationResult identificationResult;
+                if (!string.IsNullOrWhiteSpace(documentContent))
+                {
+                    identificationResult = await _documentIdentificationTool.IdentifyDocumentTypeAsync(documentContent);
+                }
+                else if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png" || fileExtension == ".gif" || fileExtension == ".bmp")
+                {
+                    // For images, we'll process them directly without text extraction
+                    identificationResult = new DocumentIdentificationResult
+                    {
+                        DocumentType = KMC_Forge_BTL_Models.Enums.DocumentType.Unknown,
+                        Confidence = 0.8, // Assume valid for processing
+                        IsSuccessful = true
+                    };
+                }
+                else
+                {
+                    return new DocumentProcessingResult
+                    {
+                        IsValid = false,
+                        DocumentType = KMC_Forge_BTL_Models.Enums.DocumentType.Unknown,
+                        Confidence = 0.0,
+                        DocumentContent = "",
+                        PdfData = null,
+                        ImageData = null,
+                        FilePath = filePath,
+                        FileName = fileName,
+                        FileSize = fileSize,
+                        ProcessingMessage = "No text could be extracted from the document"
+                    };
+                }
+
+                // Step 4: Check if document type is valid (not Unknown)
                 if (identificationResult.IsSuccessful && identificationResult.Confidence >= 0.7 && identificationResult.DocumentType != KMC_Forge_BTL_Models.Enums.DocumentType.Unknown)
                 {
-                    // Step 3: Document is valid, proceed with extraction based on file type
-                    string documentContent = "";
+                    // Step 5: Document is valid, proceed with extraction based on document type and file type
                     CompanyInfo? pdfData = null;
                     ImageExtractionResult? imageData = null;
                     
-                    if (filePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                    // Only extract PDF data for PortfolioForm documents
+                    if (identificationResult.DocumentType == KMC_Forge_BTL_Models.Enums.DocumentType.PortfolioForm && 
+                        filePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Extract PDF data
-                        pdfData = await _pdfExtractionTool.ExtractDataAsync(filePath);
-                       // documentContent = await _documentRetrievalTool.RetrieveDocumentAsync(filePath);
+                        // Extract PDF data using the already extracted content
+                        pdfData = await _pdfExtractionTool.ExtractDataAsync(documentContent);
+                        if (pdfData != null)
+                        {
+                            
+                        }
                     }
                     else if (filePath.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || 
                              filePath.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) || 
-                             filePath.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                             filePath.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
+                             filePath.EndsWith(".gif", StringComparison.OrdinalIgnoreCase) ||
+                             filePath.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase))
                     {
                         // Extract image data
                         imageData = await _imageExtractionTool.ExtractDataAsync(filePath);
-                        //documentContent = await _documentRetrievalTool.RetrieveDocumentAsync(filePath);
-                    }
-                    else
-                    {
-                        // For other file types, just retrieve content
-                       // documentContent = await _documentRetrievalTool.RetrieveDocumentAsync(filePath);
                     }
                     
                     return new DocumentProcessingResult
@@ -106,13 +190,13 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                 }
                 else
                 {
-                    // Step 4: Document is invalid or could not be identified
+                    // Step 6: Document is invalid or could not be identified
                     return new DocumentProcessingResult
                     {
                         IsValid = false,
                         DocumentType = identificationResult.DocumentType,
                         Confidence = identificationResult.Confidence,
-                        DocumentContent = "",
+                        DocumentContent = documentContent,
                         PdfData = null,
                         ImageData = null,
                         FilePath = filePath,
