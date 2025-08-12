@@ -60,8 +60,9 @@ namespace KMC_Forge_BTL_Configurations
         public string MicrosoftAspNetCoreLogLevel => _configuration["Logging:LogLevel:Microsoft.AspNetCore"] ?? "Warning";
 
         // File Paths
-        public string PdfExtractorPromptPath => _configuration["FilePaths:PdfExtractorPrompt"] ?? "Prompts/PDFExtractorPrompt.txt";
-        public string ImageExtractorPromptPath => _configuration["FilePaths:ImageExtractorPrompt"] ?? "Prompts/ImageExtractorPrompt.txt";
+        public string PdfDataExtractorPromptPath => _configuration["FilePaths:PdfDataExtractorPrompt"] ?? "Prompts/PDFDataExtractorPrompt.txt";
+        public string ImageDataExtractorPromptPath => _configuration["FilePaths:ImageDataExtractorPrompt"] ?? "Prompts/ImageDataExtractorPrompt.txt";
+        public string DocumentIdentifierPromptPath => _configuration["FilePaths:DocumentIdentifierPrompt"] ?? "Prompts/DocumentIdentifierPrompt.txt";
 
         // Retry Configuration
         public int MaxRetries => int.TryParse(_configuration["RetrySettings:MaxRetries"], out int maxRetries) ? maxRetries : 3;

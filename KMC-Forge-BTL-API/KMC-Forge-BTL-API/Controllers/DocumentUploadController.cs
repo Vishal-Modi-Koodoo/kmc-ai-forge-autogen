@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using KMC_AI_Forge_BTL_Agent.Contracts;
 using KMC_AI_Forge_BTL_Agent.Models;
 using KMC_Forge_BTL_Core_Agent.Agents;
-using Microsoft.Extensions.Configuration;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -20,91 +19,188 @@ public class DocumentUploadController : ControllerBase
         _configuration = configuration;
     }
 
-    [HttpPost("upload-portfolio")]
-    public async Task<IActionResult> UploadPortfolio([FromForm] PortfolioUploadRequest request)
+    [HttpPost("upload-locally")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadDocumentLocally([FromForm] IFormFile file, [FromForm] string portfolioId, [FromForm] string documentType = "Unknown")
+    {
+        try
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("No file uploaded");
+            }
+
+            if (string.IsNullOrWhiteSpace(portfolioId))
+            {
+                return BadRequest("Portfolio ID is required");
+            }
+
+            // Validate file size
+            if (file.Length > 50 * 1024 * 1024) // 50MB limit
+            {
+                return BadRequest("File size exceeds 50MB limit");
+            }
+
+            // Validate file type
+            if (!IsValidFileType(file))
+            {
+                return BadRequest("Invalid file type. Only PDF, images, and Excel files are supported");
+            }
+
+            // Store document locally
+            var localFilePath = await _documentStorage.StoreDocumentLocally(file, portfolioId, documentType);
+
+            _logger.LogInformation("Document stored locally: {FileName} at {FilePath}", file.FileName, localFilePath);
+
+            return Ok(new
+            {
+                Success = true,
+                Message = "Document stored locally successfully",
+                FileName = file.FileName,
+                LocalFilePath = localFilePath,
+                FileSize = file.Length,
+                PortfolioId = portfolioId,
+                DocumentType = documentType,
+                UploadTimestamp = DateTimeOffset.UtcNow
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error storing document locally: {FileName}", file?.FileName);
+            return StatusCode(500, new { Error = "Failed to store document locally", Details = ex.Message });
+        }
+    }
+
+    [HttpPost("upload2")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadPortfolio([FromForm] List<IFormFile> files)
     {
         var portfolioId = Guid.NewGuid().ToString();
-        var uploadedDocuments = new List<UploadedDocument>();
+        var validDocuments = new List<UploadedDocument>();
+        var invalidDocuments = new List<KMC_Forge_BTL_Models.InvalidDocumentInfo>();
 
         try
         {
-            // Validate required documents
-            if (request.ApplicationForm == null)
-                return BadRequest("Application Form (FMA) is required");
-                
-            if (request.EquifaxCreditSearch == null)
-                return BadRequest("Equifax Commercial Credit Search is required");
-
-            // Process each uploaded document type
-            var fmaDoc = await ProcessUploadedDocument(request.ApplicationForm, "FMA", portfolioId);
-            uploadedDocuments.Add(fmaDoc);
-
-            var equifaxDoc = await ProcessUploadedDocument(request.EquifaxCreditSearch, "EquifaxCredit", portfolioId);
-            uploadedDocuments.Add(equifaxDoc);
-
-            // Optional documents
-            if (request.PortfolioForm != null)
+            if (files == null || !files.Any())
             {
-                var portfolioDoc = await ProcessUploadedDocument(request.PortfolioForm, "PortfolioForm", portfolioId);
-                uploadedDocuments.Add(portfolioDoc);
+                return BadRequest("No files uploaded");
             }
 
-            if (request.ASTAgreements?.Any() == true)
+            // Process each uploaded document with AI identification
+            foreach (var file in files)
             {
-                foreach (var ast in request.ASTAgreements)
+                try
                 {
-                    var astDoc = await ProcessUploadedDocument(ast, "AST", portfolioId);
-                    uploadedDocuments.Add(astDoc);
+                    // Validate file size
+                    if (file.Length > 50 * 1024 * 1024) // 50MB limit
+                    {
+                        invalidDocuments.Add(new KMC_Forge_BTL_Models.InvalidDocumentInfo
+                        {
+                            FileName = file.FileName,
+                            ExpectedType = "Unknown",
+                            Reason = "File size exceeds 50MB limit",
+                            FileSize = file.Length
+                        });
+                        continue;
+                    }
+
+                    // Validate file type (basic validation)
+                    if (!IsValidFileType(file))
+                    {
+                        invalidDocuments.Add(new KMC_Forge_BTL_Models.InvalidDocumentInfo
+                        {
+                            FileName = file.FileName,
+                            ExpectedType = "Unknown",
+                            Reason = "Invalid file type. Only PDF, images, and Excel files are supported",
+                            FileSize = file.Length
+                        });
+                        continue;
+                    }
+
+                    // Store document in Azure Blob Storage with a temporary name
+                    var documentPath = await _documentStorage.StoreDocumentLocally(file, portfolioId, "Unknown");
+
+                    // Process document through LeadPortfolioAgent (includes document type checking and extraction)
+                    LeadPortfolioAgent leadPortfolioAgent = new LeadPortfolioAgent(_configuration);
+                    var processingResult = await leadPortfolioAgent.StartProcessing(documentPath, file.FileName, file.Length);
+                    
+                    _logger.LogInformation("Document processing completed for {FileName}. Identified as: {IdentifiedType} with confidence: {Confidence}", 
+                        file.FileName, processingResult.DocumentType, processingResult.Confidence);
+
+                    if (processingResult.IsValid)
+                    {
+                        var uploadedDoc = new UploadedDocument
+                        {
+                            DocumentId = Guid.NewGuid().ToString(),
+                            DocumentType = processingResult.DocumentType.ToString(),
+                            FileName = file.FileName,
+                            FilePath = documentPath,
+                            FileSize = file.Length,
+                            UploadTimestamp = DateTimeOffset.UtcNow,
+                            PortfolioId = portfolioId,
+                            ContentType = file.ContentType
+                        };
+                        validDocuments.Add(uploadedDoc);
+                    }
+                    else
+                    {
+                        invalidDocuments.Add(new KMC_Forge_BTL_Models.InvalidDocumentInfo
+                        {
+                            FileName = file.FileName,
+                            ExpectedType = "Unknown",
+                            IdentifiedType = processingResult.DocumentType.ToString(),
+                            Confidence = processingResult.Confidence,
+                            Reason = processingResult.ProcessingMessage,
+                            FileSize = file.Length,
+                            FilePath = documentPath
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error processing document {FileName}", file.FileName);
+                    invalidDocuments.Add(new KMC_Forge_BTL_Models.InvalidDocumentInfo
+                    {
+                        FileName = file.FileName,
+                        ExpectedType = "Unknown",
+                        Reason = $"Processing error: {ex.Message}",
+                        FileSize = file.Length
+                    });
                 }
             }
 
-            if (request.BankStatements?.Any() == true)
+            _logger.LogInformation("Portfolio processing completed for {PortfolioId}. Valid documents: {ValidCount}, Invalid documents: {InvalidCount}", 
+                portfolioId, validDocuments.Count, invalidDocuments.Count);
+
+            // Trigger agent-based validation workflow only for valid documents
+            if (validDocuments.Any())
             {
-                foreach (var statement in request.BankStatements)
+                LeadPortfolioAgent leadPortfolioAgent = new LeadPortfolioAgent(_configuration);
+                var firstDocumentUri = validDocuments.FirstOrDefault()?.FilePath;
+                if (!string.IsNullOrEmpty(firstDocumentUri))
                 {
-                    var bankDoc = await ProcessUploadedDocument(statement, "BankStatement", portfolioId);
-                    uploadedDocuments.Add(bankDoc);
+                    var fileStream = await leadPortfolioAgent.StartDocumentRetrieval(firstDocumentUri);
                 }
             }
 
-            if (request.MortgageStatements?.Any() == true)
-            {
-                foreach (var mortgage in request.MortgageStatements)
-                {
-                    var mortgageDoc = await ProcessUploadedDocument(mortgage, "MortgageStatement", portfolioId);
-                    uploadedDocuments.Add(mortgageDoc);
-                }
-            }
-
-            // Trigger agent-based validation workflow
-            //var validationResult = await _validationService.StartValidation(portfolioId, uploadedDocuments);
-
-            _logger.LogInformation("Portfolio validation started for {PortfolioId} with {DocumentCount} documents", 
-                portfolioId, uploadedDocuments.Count);
-
-            LeadPortfolioAgent leadPortfolioAgent = new LeadPortfolioAgent(_configuration);
-            // Use the first uploaded document URI for retrieval
-            await leadPortfolioAgent.StartProcessing("C:/Users/VishalModi/Desktop/testdata.pdf", "https://i.ibb.co/n8r20Zq9/screencapture-find-and-updatepany-information-service-gov-uk-company-12569527-charges-TPa-d-WITwye-o.png");
-           // var firstDocumentUri = uploadedDocuments.FirstOrDefault()?.FilePath;
-            //if (!string.IsNullOrEmpty(firstDocumentUri))
-            //{
-            //    var fileStream = await leadPortfolioAgent.StartProcessing("/Users/Monish.Koyott/Desktop/KMC-AI-Forge-BTL/kmc-ai-forge-autogen/KMC-Forge-BTL-API/KMC-Forge-BTL-Core-Agent/UploadedFiles/testdata.pdf");
-            //}
-
-            // await leadPortfolioAgent.StartProcessing("C:/Users/VishalModi/Desktop/testdata.pdf");
-           var firstDocumentUri = uploadedDocuments.FirstOrDefault()?.FilePath;
-            if (!string.IsNullOrEmpty(firstDocumentUri))
-            {
-               var fileStream = await leadPortfolioAgent.StartDocumentRetrieval(firstDocumentUri);
-            }
-            return Ok(new PortfolioUploadResponse
+            // Create extended response with validation results
+            var response = new
             {
                 PortfolioId = portfolioId,
-               // ValidationId = validationResult.ValidationId,
                 EstimatedProcessingTime = "3-5 minutes",
                 Status = "Processing",
-                UploadedDocuments = uploadedDocuments
-            });
+                UploadedDocuments = validDocuments,
+                InvalidDocuments = invalidDocuments,
+                Summary = new
+                {
+                    TotalDocuments = files.Count(),
+                    ValidDocuments = validDocuments.Count,
+                    InvalidDocuments = invalidDocuments.Count,
+                    ProcessingCompleted = true
+                }
+            };
+
+            return Ok(response);
         }
         catch (Exception ex)
         {
@@ -113,42 +209,24 @@ public class DocumentUploadController : ControllerBase
         }
     }
 
-    private async Task<UploadedDocument> ProcessUploadedDocument(IFormFile file, string documentType, string portfolioId)
+    private bool IsValidFileType(IFormFile file)
     {
-        // Validate file type and size
-        if (!IsValidDocumentType(file, documentType))
-            throw new ArgumentException($"Invalid file type for {documentType}");
-
-        if (file.Length > 50 * 1024 * 1024) // 50MB limit
-            throw new ArgumentException("File size exceeds 50MB limit");
-
-        // Store document in Azure Blob Storage
-        var documentPath = await _documentStorage.StoreDocument(file, portfolioId, documentType);
-
-        return new UploadedDocument
-        {
-            DocumentId = Guid.NewGuid().ToString(),
-            DocumentType = documentType,
-            FileName = file.FileName,
-            FilePath = documentPath,
-            FileSize = file.Length,
-            UploadTimestamp = DateTimeOffset.UtcNow,
-            PortfolioId = portfolioId,
-            ContentType = file.ContentType
-        };
-    }
-
-    private bool IsValidDocumentType(IFormFile file, string documentType)
-    {
-        var allowedTypes = documentType switch
-        {
-            "FMA" or "PortfolioForm" or "EquifaxCredit" or "AST" or "MortgageStatement" => 
-                new[] { "application/pdf", "image/jpeg", "image/png", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
-            "BankStatement" => 
-                new[] { "application/pdf", "text/csv", "application/vnd.ms-excel" },
-            _ => new[] { "application/pdf" }
+        var allowedTypes = new[] 
+        { 
+            "application/pdf", 
+            "image/jpeg", 
+            "image/png", 
+            "image/gif",
+            "image/bmp",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-excel",
+            "text/csv",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/msword"
         };
 
         return allowedTypes.Contains(file.ContentType);
     }
+
 }
+

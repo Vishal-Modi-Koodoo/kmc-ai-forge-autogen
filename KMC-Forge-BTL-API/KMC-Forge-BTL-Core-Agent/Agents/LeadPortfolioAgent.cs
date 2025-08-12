@@ -14,6 +14,12 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             _documentValidatorAgent = new DocumentValidatorAgent(configuration);
         }
 
+        public async Task<DocumentProcessingResult> StartProcessing(string filePath, string fileName, long fileSize)
+        {
+            // Process document through DocumentValidatorAgent (includes document type checking and extraction)
+            return await _documentValidatorAgent.StartProcessing(filePath, fileName, fileSize);
+        }
+
         public async Task<CompanyInfo> StartProcessing(string filePath, string imagePath)
         {
             // Orchestrate the PDF extraction by calling DocumentValidatorAgent
