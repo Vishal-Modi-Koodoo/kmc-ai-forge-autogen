@@ -4,3 +4,5 @@
 
 /.vs
 /KMC-Forge-BTL-API
+.vscode/tasks.json
+.vscode/launch.json
