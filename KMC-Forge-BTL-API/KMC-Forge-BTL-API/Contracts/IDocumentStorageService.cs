@@ -12,4 +12,13 @@ public interface IDocumentStorageService
     /// <param name="documentType">The type of document being stored</param>
     /// <returns>The path/identifier of the stored document</returns>
     Task<string> StoreDocument(IFormFile file, string portfolioId, string documentType);
+
+    /// <summary>
+    /// Stores a document locally on the file system
+    /// </summary>
+    /// <param name="file">The file to store</param>
+    /// <param name="portfolioId">The portfolio identifier</param>
+    /// <param name="documentType">The type of document being stored</param>
+    /// <returns>The local file path of the stored document</returns>
+    Task<string> StoreDocumentLocally(IFormFile file, string portfolioId, string documentType);
 }
