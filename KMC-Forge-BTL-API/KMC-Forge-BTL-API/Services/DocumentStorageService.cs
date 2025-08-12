@@ -33,7 +33,7 @@ public class DocumentStorageService : IDocumentStorageService
 
         using (var stream = file.OpenReadStream())
         {
-            await blobClient.UploadAsync(stream, new BlobHttpHeaders { ContentType = file.ContentType });
+            // await blobClient.UploadAsync(stream, new BlobHttpHeaders { ContentType = file.ContentType });
         }
 
         return blobClient.Uri.ToString();
