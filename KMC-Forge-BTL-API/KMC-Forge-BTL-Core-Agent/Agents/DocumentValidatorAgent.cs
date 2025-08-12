@@ -49,7 +49,7 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                 _imageExtractionTool = new ImageExtractionTool();
                 
                 // Create a document identification agent for the tool
-                var documentIdentificationAgent = new DocumentAnalyserAgent(_openAIClient, config.AzureOpenAIModel, "You are a document type identification expert.", "document_identifier").RegisterMessageConnector().RegisterPrintMessage();
+                var documentIdentificationAgent = new DocumentAnalyserAgent(_openAIClient, config.AzureOpenAIModel, documentIdentifierPrompt, "document_identifier").RegisterMessageConnector().RegisterPrintMessage();
                 _documentIdentificationTool = new DocumentIdentificationTool(documentIdentificationAgent);
             }
         }

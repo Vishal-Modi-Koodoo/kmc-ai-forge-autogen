@@ -19,57 +19,101 @@ public class DocumentUploadController : ControllerBase
         _configuration = configuration;
     }
 
+    /*
     [HttpPost("upload-locally")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> UploadDocumentLocally([FromForm] IFormFile file, [FromForm] string portfolioId, [FromForm] string documentType = "Unknown")
+    public async Task<IActionResult> UploadDocumentLocally([FromForm] List<IFormFile> files)
     {
         try
         {
-            if (file == null || file.Length == 0)
+            if (files == null || !files.Any())
             {
-                return BadRequest("No file uploaded");
+                return BadRequest("No files uploaded");
             }
 
-            if (string.IsNullOrWhiteSpace(portfolioId))
+            var uploadedFiles = new List<object>();
+            var failedFiles = new List<object>();
+
+            foreach (var file in files)
             {
-                return BadRequest("Portfolio ID is required");
+                try
+                {
+                    // Validate file size
+                    if (file.Length > 50 * 1024 * 1024) // 50MB limit
+                    {
+                        failedFiles.Add(new
+                        {
+                            FileName = file.FileName,
+                            Error = "File size exceeds 50MB limit",
+                            FileSize = file.Length
+                        });
+                        continue;
+                    }
+
+                    // Validate file type
+                    if (!IsValidFileType(file))
+                    {
+                        failedFiles.Add(new
+                        {
+                            FileName = file.FileName,
+                            Error = "Invalid file type. Only PDF, images, and Excel files are supported",
+                            FileSize = file.Length
+                        });
+                        continue;
+                    }
+
+                    // Generate a simple portfolio ID for local storage
+                    var portfolioId = Guid.NewGuid().ToString();
+                    var documentType = "Unknown";
+
+                    // Store document locally
+                    var localFilePath = await _documentStorage.StoreDocumentLocally(file, portfolioId, documentType);
+
+                    _logger.LogInformation("Document stored locally: {FileName} at {FilePath}", file.FileName, localFilePath);
+
+                    uploadedFiles.Add(new
+                    {
+                        FileName = file.FileName,
+                        LocalFilePath = localFilePath,
+                        FileSize = file.Length,
+                        PortfolioId = portfolioId,
+                        DocumentType = documentType,
+                        UploadTimestamp = DateTimeOffset.UtcNow
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error storing document locally: {FileName}", file.FileName);
+                    failedFiles.Add(new
+                    {
+                        FileName = file.FileName,
+                        Error = $"Processing error: {ex.Message}",
+                        FileSize = file.Length
+                    });
+                }
             }
-
-            // Validate file size
-            if (file.Length > 50 * 1024 * 1024) // 50MB limit
-            {
-                return BadRequest("File size exceeds 50MB limit");
-            }
-
-            // Validate file type
-            if (!IsValidFileType(file))
-            {
-                return BadRequest("Invalid file type. Only PDF, images, and Excel files are supported");
-            }
-
-            // Store document locally
-            var localFilePath = await _documentStorage.StoreDocumentLocally(file, portfolioId, documentType);
-
-            _logger.LogInformation("Document stored locally: {FileName} at {FilePath}", file.FileName, localFilePath);
 
             return Ok(new
             {
                 Success = true,
-                Message = "Document stored locally successfully",
-                FileName = file.FileName,
-                LocalFilePath = localFilePath,
-                FileSize = file.Length,
-                PortfolioId = portfolioId,
-                DocumentType = documentType,
-                UploadTimestamp = DateTimeOffset.UtcNow
+                Message = $"Successfully processed {uploadedFiles.Count} files, {failedFiles.Count} failed",
+                UploadedFiles = uploadedFiles,
+                FailedFiles = failedFiles,
+                Summary = new
+                {
+                    TotalFiles = files.Count,
+                    SuccessfulUploads = uploadedFiles.Count,
+                    FailedUploads = failedFiles.Count
+                }
             });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error storing document locally: {FileName}", file?.FileName);
-            return StatusCode(500, new { Error = "Failed to store document locally", Details = ex.Message });
+            _logger.LogError(ex, "Error processing multiple files upload");
+            return StatusCode(500, new { Error = "Failed to process files upload", Details = ex.Message });
         }
     }
+    */
 
     [HttpPost("upload2")]
     [Consumes("multipart/form-data")]
