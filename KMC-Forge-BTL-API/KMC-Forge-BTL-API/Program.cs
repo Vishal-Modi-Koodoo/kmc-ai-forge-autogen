@@ -3,6 +3,8 @@ using KMC_AI_Forge_BTL_Agent.Services;
 using KMC_Forge_BTL_API.Services;
 using KMC_Forge_BTL_Configurations;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,11 +14,40 @@ AppConfiguration.Initialize(builder.Configuration);
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+// Configure request size limits for file uploads
+builder.Services.Configure<IISServerOptions>(options =>
+{
+    options.MaxRequestBodySize = 500 * 1024 * 1024; // 500MB
+});
+
+builder.Services.Configure<KestrelServerOptions>(options =>
+{
+    options.Limits.MaxRequestBodySize = 500 * 1024 * 1024; // 500MB
+});
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 500 * 1024 * 1024; // 500MB
+    options.ValueLengthLimit = int.MaxValue;
+    options.MemoryBufferThreshold = int.MaxValue;
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "KMC Forge BTL API", Version = "v1" });
+    
+    // Configure Swagger for better file upload support
+    c.OperationFilter<FileUploadOperationFilter>();
+    
+    // Add support for multipart/form-data
+    c.AddSecurityDefinition("multipart/form-data", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Header,
+        Name = "Content-Type"
+    });
 });
 
 builder.Services.AddTransient<IDocumentStorageService, DocumentStorageService>();
@@ -38,10 +69,21 @@ if (app.Environment.IsDevelopment())
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "KMC Forge BTL API v1");
         c.RoutePrefix = "swagger";
+        
+        // Configure Swagger UI for better file upload experience
+        c.DocumentTitle = "KMC Forge BTL API - File Upload";
+        c.DefaultModelsExpandDepth(-1); // Hide schemas section
+        c.DisplayRequestDuration();
+        
+        // Add custom CSS for better file upload UI
+        c.InjectStylesheet("/swagger-ui/custom.css");
     });
 }
 
 app.UseHttpsRedirection();
+
+// Enable static files for custom Swagger UI CSS
+app.UseStaticFiles();
 
 app.UseAuthorization();
 
