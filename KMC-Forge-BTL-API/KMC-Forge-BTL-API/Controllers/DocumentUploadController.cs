@@ -219,15 +219,15 @@ public class DocumentUploadController : ControllerBase
                 portfolioId, validDocuments.Count, invalidDocuments.Count);
 
             // Trigger agent-based validation workflow only for valid documents
-            if (validDocuments.Any())
-            {
-                LeadPortfolioAgent leadPortfolioAgent = new LeadPortfolioAgent(_configuration);
-                var firstDocumentUri = validDocuments.FirstOrDefault()?.FilePath;
-                if (!string.IsNullOrEmpty(firstDocumentUri))
-                {
-                    var fileStream = await leadPortfolioAgent.StartDocumentRetrieval(firstDocumentUri);
-                }
-            }
+            // if (validDocuments.Any())
+            // {
+            //     LeadPortfolioAgent leadPortfolioAgent = new LeadPortfolioAgent(_configuration);
+            //     var firstDocumentUri = validDocuments.FirstOrDefault()?.FilePath;
+            //     if (!string.IsNullOrEmpty(firstDocumentUri))
+            //     {
+            //         var fileStream = await leadPortfolioAgent.StartDocumentRetrieval(firstDocumentUri);
+            //     }
+            // }
 
             // Create extended response with validation results
             var response = new
