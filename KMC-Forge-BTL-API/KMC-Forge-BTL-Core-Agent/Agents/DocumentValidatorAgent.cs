@@ -23,6 +23,7 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
 
         public DocumentValidatorAgent(IConfiguration configuration)
         {
+            _documentRetrievalTool = new DocumentRetrievalTool();
             // Initialize the configuration singleton
             AppConfiguration.Initialize(configuration);
             var config = AppConfiguration.Instance;

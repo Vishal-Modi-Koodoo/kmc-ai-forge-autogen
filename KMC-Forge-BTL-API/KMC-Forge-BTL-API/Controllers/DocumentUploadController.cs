@@ -3,6 +3,7 @@ using KMC_AI_Forge_BTL_Agent.Contracts;
 using KMC_AI_Forge_BTL_Agent.Models;
 using KMC_Forge_BTL_Core_Agent.Agents;
 using Microsoft.Extensions.Configuration;
+using Utilities;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -79,22 +80,18 @@ public class DocumentUploadController : ControllerBase
             _logger.LogInformation("Portfolio validation started for {PortfolioId} with {DocumentCount} documents", 
                 portfolioId, uploadedDocuments.Count);
 
-            LeadPortfolioAgent leadPortfolioAgent = new LeadPortfolioAgent(_configuration);
-            // Use the first uploaded document URI for retrieval
-            await leadPortfolioAgent.StartProcessing("C:/Users/VishalModi/Desktop/testdata.pdf", "https://i.ibb.co/n8r20Zq9/screencapture-find-and-updatepany-information-service-gov-uk-company-12569527-charges-TPa-d-WITwye-o.png");
-           // var firstDocumentUri = uploadedDocuments.FirstOrDefault()?.FilePath;
-            //if (!string.IsNullOrEmpty(firstDocumentUri))
-            //{
-            //    var fileStream = await leadPortfolioAgent.StartProcessing("/Users/Monish.Koyott/Desktop/KMC-AI-Forge-BTL/kmc-ai-forge-autogen/KMC-Forge-BTL-API/KMC-Forge-BTL-Core-Agent/UploadedFiles/testdata.pdf");
-            //}
+            // LeadPortfolioAgent leadPortfolioAgent = new LeadPortfolioAgent(_configuration);
+            // var firstDocumentUri = uploadedDocuments.FirstOrDefault()?.FilePath;
+            // if (!string.IsNullOrEmpty(firstDocumentUri))
+            // {
+            // var fileContent=await leadPortfolioAgent.StartDocumentRetrieval("https://kmcaidocumentrepository.blob.core.windows.net/kmcaidocumentrepository/14135249-d243-453e-bad1-a459ca37c1d5/EquifaxCredit/61debcb0-d9c6-4cec-b35c-cc48fbb84935_testdata.pdf?sp=r&st=2025-08-08T07:53:22Z&se=2025-08-08T16:08:22Z&spr=https&sv=2024-11-04&sr=b&sig=3vlxbNJu7%2FGpD%2FSiiwZUVplLWsrvgmD6QxPHb0leTCs%3D");
+            // var fileStream = await leadPortfolioAgent.StartProcessing(fileContent,"https://i.ibb.co/n8r20Zq9/screencapture-find-and-updatepany-information-service-gov-uk-company-12569527-charges-TPa-d-WITwye-o.png");
+            // }
+
+            // GetCompanyHouseDetails getCompanyHouseDetails = new GetCompanyHouseDetails();
+            // await getCompanyHouseDetails.CaptureAllIncludingChargesAsync();
 
             // await leadPortfolioAgent.StartProcessing("C:/Users/VishalModi/Desktop/testdata.pdf");
-           var firstDocumentUri = uploadedDocuments.FirstOrDefault()?.FilePath;
-            if (!string.IsNullOrEmpty(firstDocumentUri))
-            {
-               var fileContent = await leadPortfolioAgent.StartDocumentRetrieval("");
-               var companyInfo = await leadPortfolioAgent.StartProcessing(fileContent);
-            }
             return Ok(new PortfolioUploadResponse
             {
                 PortfolioId = portfolioId,
