@@ -2,6 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using KMC_AI_Forge_BTL_Agent.Contracts;
 using KMC_AI_Forge_BTL_Agent.Models;
 using KMC_Forge_BTL_Core_Agent.Agents;
+<<<<<<< HEAD
+=======
+using Microsoft.Extensions.Configuration;
+using Utilities;
+>>>>>>> origin/main
 
 [ApiController]
 [Route("api/[controller]")]
@@ -227,8 +232,36 @@ public class DocumentUploadController : ControllerBase
                 }
             }
 
+<<<<<<< HEAD
             // Create extended response with validation results
             var response = new
+=======
+            if (request.MortgageStatements?.Any() == true)
+            {
+                foreach (var mortgage in request.MortgageStatements)
+                {
+                    var mortgageDoc = await ProcessUploadedDocument(mortgage, "MortgageStatement", portfolioId);
+                    uploadedDocuments.Add(mortgageDoc);
+                }
+            }
+
+            _logger.LogInformation("Portfolio validation started for {PortfolioId} with {DocumentCount} documents", 
+                portfolioId, uploadedDocuments.Count);
+
+            // LeadPortfolioAgent leadPortfolioAgent = new LeadPortfolioAgent(_configuration);
+            // var firstDocumentUri = uploadedDocuments.FirstOrDefault()?.FilePath;
+            // if (!string.IsNullOrEmpty(firstDocumentUri))
+            // {
+            // var fileContent=await leadPortfolioAgent.StartDocumentRetrieval("https://kmcaidocumentrepository.blob.core.windows.net/kmcaidocumentrepository/14135249-d243-453e-bad1-a459ca37c1d5/EquifaxCredit/61debcb0-d9c6-4cec-b35c-cc48fbb84935_testdata.pdf?sp=r&st=2025-08-08T07:53:22Z&se=2025-08-08T16:08:22Z&spr=https&sv=2024-11-04&sr=b&sig=3vlxbNJu7%2FGpD%2FSiiwZUVplLWsrvgmD6QxPHb0leTCs%3D");
+            // var fileStream = await leadPortfolioAgent.StartProcessing(fileContent,"https://i.ibb.co/n8r20Zq9/screencapture-find-and-updatepany-information-service-gov-uk-company-12569527-charges-TPa-d-WITwye-o.png");
+            // }
+
+            // GetCompanyHouseDetails getCompanyHouseDetails = new GetCompanyHouseDetails();
+            // await getCompanyHouseDetails.CaptureAllIncludingChargesAsync();
+
+            // await leadPortfolioAgent.StartProcessing("C:/Users/VishalModi/Desktop/testdata.pdf");
+            return Ok(new PortfolioUploadResponse
+>>>>>>> origin/main
             {
                 PortfolioId = portfolioId,
                 EstimatedProcessingTime = "3-5 minutes",

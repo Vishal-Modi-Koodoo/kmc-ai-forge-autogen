@@ -23,8 +23,7 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
         public async Task<CompanyInfo> StartProcessing(string filePath, string imagePath)
         {
             // Orchestrate the PDF extraction by calling DocumentValidatorAgent
-            var brokerFormInfo = await _documentValidatorAgent.ExtractDataFromPdfAsync(filePath);
-            var chargeInfo = await _documentValidatorAgent.ExtractDetailsFromImageAsync(imagePath);
+            var brokerFormInfo = await _documentValidatorAgent.ExtractDataFromContentAsync(filePath);
             return brokerFormInfo;
         }
 

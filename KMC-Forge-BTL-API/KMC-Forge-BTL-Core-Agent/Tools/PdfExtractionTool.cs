@@ -2,7 +2,6 @@ using AutoGen;
 using AutoGen.Core;
 using AutoGen.OpenAI;
 using KMC_Forge_BTL_Configurations;
-using KMC_Forge_BTL_Core_Agent.Utils;
 using KMC_Forge_BTL_Models.PDFExtractorResponse;
 
 namespace KMC_Forge_BTL_Core_Agent.Tools
@@ -18,11 +17,9 @@ namespace KMC_Forge_BTL_Core_Agent.Tools
             _config = AppConfiguration.Instance;
         }
 
-        public async Task<CompanyInfo> ExtractDataAsync(string path)
+        public async Task<CompanyInfo> ExtractDataAsync(string fileContent)
         {
-            string extractedText = PdfExtractor.ExtractTextFromPdf(path);
-
-            if (string.IsNullOrWhiteSpace(extractedText))
+            if (string.IsNullOrWhiteSpace(fileContent))
             {
                 Console.WriteLine("No text could be extracted from the PDF.");
                 return new CompanyInfo();
@@ -47,7 +44,7 @@ namespace KMC_Forge_BTL_Core_Agent.Tools
                 {
                     var messages = await userProxy.InitiateChatAsync(
                         receiver: _pdfAnalyserAgent,
-                        message: extractedText,
+                        message: fileContent,
                         maxRound: 1);
 
                     string aiJson = null;

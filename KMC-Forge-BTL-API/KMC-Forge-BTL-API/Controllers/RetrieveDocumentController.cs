@@ -39,11 +39,11 @@ public class RetrieveDocumentController : ControllerBase
             }
 
             // Download the document
-            var (content, contentType, fileName) = await _documentRetrievalService.DownloadDocumentAsync(documentUri);
+            var content = await _documentRetrievalService.RetrieveDocumentAsync(documentUri);
 
             _logger.LogInformation("Successfully retrieved document: {DocumentUri}", documentUri);
 
-            return File(content, contentType, fileName);
+            return Ok(content);
         }
         catch (Exception ex)
         {
