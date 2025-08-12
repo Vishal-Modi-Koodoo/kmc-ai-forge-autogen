@@ -1,0 +1,63 @@
+/* Custom CSS for Swagger UI File Upload */
+
+/* Improve file input styling */
+.swagger-ui .opblock-body .opblock-section .opblock-section-header .opblock-section-header-container .opblock-section-header-container__label {
+    font-weight: bold;
+    color: #3b4151;
+}
+
+/* Make file upload area more prominent */
+.swagger-ui .opblock-body .opblock-section .opblock-section-header .opblock-section-header-container .opblock-section-header-container__label[for*="files"] {
+    background-color: #f0f8ff;
+    padding: 8px;
+    border-radius: 4px;
+    border: 2px dashed #007bff;
+}
+
+/* Improve file input button */
+.swagger-ui input[type="file"] {
+    border: 2px solid #007bff;
+    border-radius: 4px;
+    padding: 8px;
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+.swagger-ui input[type="file"]:hover {
+    background-color: #e9ecef;
+    border-color: #0056b3;
+}
+
+/* Style for multiple file upload */
+.swagger-ui input[type="file"][multiple] {
+    min-height: 60px;
+}
+
+/* Improve execute button for file uploads */
+.swagger-ui .opblock-body .opblock-section .opblock-section-header .opblock-section-header-container .opblock-section-header-container__label + .execute-wrapper .btn.execute {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.swagger-ui .opblock-body .opblock-section .opblock-section-header .opblock-section-header-container .opblock-section-header-container__label + .execute-wrapper .btn.execute:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+/* Add some spacing for better readability */
+.swagger-ui .opblock-body .opblock-section {
+    margin-bottom: 20px;
+}
+
+/* Highlight file upload endpoints */
+.swagger-ui .opblock.opblock-post .opblock-summary-method {
+    background-color: #28a745;
+}
+
+/* Add a note about multiple file upload */
+.swagger-ui .opblock-body .opblock-section .opblock-section-header .opblock-section-header-container .opblock-section-header-container__label::after {
+    content: " (Multiple files supported)";
+    font-size: 0.8em;
+    color: #6c757d;
+    font-style: italic;
+}
