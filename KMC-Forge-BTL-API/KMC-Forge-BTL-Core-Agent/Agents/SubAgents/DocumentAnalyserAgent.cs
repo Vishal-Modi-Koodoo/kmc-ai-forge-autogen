@@ -3,11 +3,11 @@ using Azure.AI.OpenAI;
 
 namespace KMC_Forge_BTL_Core_Agent.Agents.SubAgents
 {
-    public class PDFAnalyserAgent : OpenAIChatAgent
+    public class DocumentAnalyserAgent : OpenAIChatAgent
     {
-        public PDFAnalyserAgent(AzureOpenAIClient openAIClient, string model, string analysisPrompt)
+        public DocumentAnalyserAgent(AzureOpenAIClient openAIClient, string model, string analysisPrompt, string name)
             : base(
-                name: "pdf_analyzer",
+                name: name,
                 systemMessage: analysisPrompt,
                 chatClient: openAIClient.GetChatClient(model))
         {

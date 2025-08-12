@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KMC-Forge-BTL-Core-Agent", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KMC-Forge-BTL-Models", "KMC-Forge-BTL-Models\KMC-Forge-BTL-Models.csproj", "{0B058EE0-C44B-443A-8279-87D359221AB4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KMC-Forge-BTL-Configurations", "KMC-Forge-BTL-Configurations\KMC-Forge-BTL-Configurations.csproj", "{6417F4FE-6DF6-40EC-8E82-3EF5431AD4F5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,7 +29,10 @@ Global
 		{0B058EE0-C44B-443A-8279-87D359221AB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0B058EE0-C44B-443A-8279-87D359221AB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0B058EE0-C44B-443A-8279-87D359221AB4}.Release|Any CPU.Build.0 = Release|Any CPU
-
+		{6417F4FE-6DF6-40EC-8E82-3EF5431AD4F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6417F4FE-6DF6-40EC-8E82-3EF5431AD4F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6417F4FE-6DF6-40EC-8E82-3EF5431AD4F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6417F4FE-6DF6-40EC-8E82-3EF5431AD4F5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

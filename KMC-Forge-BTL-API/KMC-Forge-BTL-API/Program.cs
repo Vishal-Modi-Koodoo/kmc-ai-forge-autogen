@@ -1,8 +1,12 @@
 using KMC_AI_Forge_BTL_Agent.Contracts;
 using KMC_AI_Forge_BTL_Agent.Services;
 using KMC_Forge_BTL_API.Services;
+using KMC_Forge_BTL_Configurations;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Initialize the configuration singleton
+AppConfiguration.Initialize(builder.Configuration);
 
 // Add services to the container.
 

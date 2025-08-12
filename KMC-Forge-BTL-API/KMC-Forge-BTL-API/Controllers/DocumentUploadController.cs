@@ -81,6 +81,13 @@ public class DocumentUploadController : ControllerBase
 
             LeadPortfolioAgent leadPortfolioAgent = new LeadPortfolioAgent(_configuration);
             // Use the first uploaded document URI for retrieval
+            await leadPortfolioAgent.StartProcessing("C:/Users/VishalModi/Desktop/testdata.pdf", "https://i.ibb.co/n8r20Zq9/screencapture-find-and-updatepany-information-service-gov-uk-company-12569527-charges-TPa-d-WITwye-o.png");
+           // var firstDocumentUri = uploadedDocuments.FirstOrDefault()?.FilePath;
+            //if (!string.IsNullOrEmpty(firstDocumentUri))
+            //{
+            //    var fileStream = await leadPortfolioAgent.StartProcessing("/Users/Monish.Koyott/Desktop/KMC-AI-Forge-BTL/kmc-ai-forge-autogen/KMC-Forge-BTL-API/KMC-Forge-BTL-Core-Agent/UploadedFiles/testdata.pdf");
+            //}
+
             // await leadPortfolioAgent.StartProcessing("C:/Users/VishalModi/Desktop/testdata.pdf");
            var firstDocumentUri = uploadedDocuments.FirstOrDefault()?.FilePath;
             if (!string.IsNullOrEmpty(firstDocumentUri))

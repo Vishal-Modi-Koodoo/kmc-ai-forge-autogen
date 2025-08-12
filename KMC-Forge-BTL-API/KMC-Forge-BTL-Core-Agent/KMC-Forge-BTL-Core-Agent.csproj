@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\KMC-FOrge-BTL-Models\KMC-Forge-BTL-Models.csproj" />
+    <ProjectReference Include="..\KMC-Forge-BTL-Configurations\KMC-Forge-BTL-Configurations.csproj" />
   </ItemGroup>
 
 </Project>
