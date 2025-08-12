@@ -23,6 +23,7 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
 
         public DocumentValidatorAgent(IConfiguration configuration)
         {
+            _documentRetrievalTool = new DocumentRetrievalTool();
             // Initialize the configuration singleton
             AppConfiguration.Initialize(configuration);
             var config = AppConfiguration.Instance;
@@ -47,10 +48,10 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             }
         }
 
-        public async Task<CompanyInfo> ExtractDataFromPdfAsync(string path)
+        public async Task<CompanyInfo> ExtractDataFromContentAsync(string content)
         {
-            // Delegate PDF extraction to the tool
-            return await _pdfExtractionTool.ExtractDataAsync(path);
+            // Delegate data extraction to the tool
+            return await _pdfExtractionTool.ExtractDataAsync(content);
         }
 
         public async Task<ImageExtractionResult> ExtractDetailsFromImageAsync(string path)
