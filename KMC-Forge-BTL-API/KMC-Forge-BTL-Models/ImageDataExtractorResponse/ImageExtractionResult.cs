@@ -1,4 +1,4 @@
-﻿namespace KMC_FOrge_BTL_Models.ImageDataExtractorResponse
+﻿namespace KMC_Forge_BTL_Models.ImageDataExtractorResponse
 {
     public class ImageExtractionResult
     {
