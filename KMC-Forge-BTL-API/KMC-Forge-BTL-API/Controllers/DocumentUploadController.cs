@@ -173,17 +173,15 @@ public class DocumentUploadController : ControllerBase
                     }
 
                     // Store document in Azure Blob Storage with a temporary name
-                    var documentPath = await _documentStorage.StoreDocumentLocally(file, portfolioId, "Unknown");
+                    var documentPath = await _documentStorage.StoreDocumentLocally(file, portfolioId);
 
                     // Process document through LeadPortfolioAgent (includes document type checking and extraction)
-                    // Use the LeadPortfolioAgent instance from the controller's constructor
-                  
                     var identifiedDocument = await _leadPortfolioAgent.IdentifyDocumentType(documentPath, file.FileName, file.Length);
                     identifiedDocuments.Add(identifiedDocument);
 
                     validDocuments.Add(new UploadedDocument
                     {
-                        DocumentId = Guid.NewGuid().ToString(),
+                        DocumentId = Path.GetFileNameWithoutExtension(documentPath),
                         DocumentType = identifiedDocument.IdentificationResult.DocumentType.ToString(),
                         FileName = file.FileName,
                         FilePath = documentPath,
@@ -219,7 +217,7 @@ public class DocumentUploadController : ControllerBase
             //Step 2: Portfolio Completion
             var portfolioFormData = GetDocumentProcessingResult(identifiedDocuments, KMC_Forge_BTL_Models.Enums.DocumentType.PortfolioForm);
 
-            if (portfolioData != null)
+            if (portfolioFormData != null)
             {
                 var processingResult = await _leadPortfolioAgent.PortfolioCompletion(portfolioFormData);
                 portfolioData = processingResult.PdfData;   

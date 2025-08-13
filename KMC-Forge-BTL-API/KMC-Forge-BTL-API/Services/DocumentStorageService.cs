@@ -39,25 +39,25 @@ public class DocumentStorageService : IDocumentStorageService
         return blobClient.Uri.ToString();
     }
 
-    public async Task<string> StoreDocumentLocally(IFormFile file, string portfolioId, string documentType)
+    public async Task<string> StoreDocumentLocally(IFormFile file, string portfolioId)
     {
         try
         {
             // Create the directory structure: Uploads/PortfolioId/DocumentType/
             var portfolioDirectory = Path.Combine(_localStoragePath, portfolioId);
-            var documentTypeDirectory = Path.Combine(portfolioDirectory, documentType);
+            var documentTypeDirectory = Path.Combine(portfolioDirectory);
             
             // Ensure directories exist
             Directory.CreateDirectory(documentTypeDirectory);
 
-            // Generate unique filename with timestamp and GUID
-            var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            // Generate unique filename with GUID
             var guid = Guid.NewGuid().ToString("N");
-            var fileExtension = Path.GetExtension(file.FileName);
-            var fileName = $"{timestamp}_{guid}{fileExtension}";
+            var fileExtension = Path.GetExtension(file.FileName);       
+            var fileName = $"{guid}{fileExtension}";
             
             // Full path for the file
-            var filePath = Path.Combine(documentTypeDirectory, fileName);
+            var filePath = Path.Combine(documentTypeDirectory, fileName);    
+            // Full path for the file
 
             // Save the file
             using (var stream = new FileStream(filePath, FileMode.Create))
