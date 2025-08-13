@@ -2,22 +2,55 @@ using Microsoft.AspNetCore.Mvc;
 using KMC_AI_Forge_BTL_Agent.Contracts;
 using KMC_AI_Forge_BTL_Agent.Models;
 using KMC_Forge_BTL_Core_Agent.Agents;
-using KMC_AI_Forge_BTL_Agent.AgentInitiatorLayer;
+using KMC_Forge_BTL_Core_Agent.Tools;
+using AutoGen.Core;
+using AutoGen.OpenAI;
+using KMC_Forge_BTL_Core_Agent.Agents.SubAgents;
+using KMC_Forge_BTL_Configurations;
+using Azure;
+using AutoGen.OpenAI.Extension;
+using KMC_Forge_BTL_API.Services;
+using KMC_Forge_BTL_API.Hubs;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using KMC_Forge_BTL_API.Contracts;
+using System;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
+using System.Linq;
 
 [ApiController]
 [Route("api/[controller]")]
 public class DocumentUploadController : ControllerBase
 {
     private readonly IDocumentStorageService _documentStorage;
+    private readonly MiddlewareStreamingAgent<OpenAIChatAgent> _portfolioValidatorAgent;
     private readonly IPortfolioValidationService _validationService;
     private readonly ILogger<DocumentUploadController> _logger;
     private readonly IConfiguration _configuration;
+    private readonly Azure.AI.OpenAI.AzureOpenAIClient _openAIClient;
+    private readonly ISignalRService _signalRService;
 
-    public DocumentUploadController(IDocumentStorageService documentStorage, IPortfolioValidationService validationService, ILogger<DocumentUploadController> logger, IConfiguration configuration){
+    public DocumentUploadController(IDocumentStorageService documentStorage, IPortfolioValidationService validationService, ILogger<DocumentUploadController> logger, IConfiguration configuration, ISignalRService signalRService){
         _documentStorage = documentStorage;
         _validationService = validationService;
         _logger = logger;
         _configuration = configuration;
+        _signalRService = signalRService;
+
+        AppConfiguration.Initialize(configuration);
+        var config = AppConfiguration.Instance;
+
+                    _openAIClient = new Azure.AI.OpenAI.AzureOpenAIClient(
+                new Uri(config.AzureOpenAIEndpoint),
+                new AzureKeyCredential(config.AzureOpenAIApiKey)
+            );
+
+            string portfolioValidatorPrompt = System.IO.File.ReadAllText(config.PortfolioValidatorPrompt);
+
+        _portfolioValidatorAgent = new DocumentAnalyserAgent(_openAIClient, config.AzureOpenAIModel, portfolioValidatorPrompt, "portfolio_validator").RegisterMessageConnector().RegisterPrintMessage(); 
+
     }
 
     /*
@@ -168,7 +201,7 @@ public class DocumentUploadController : ControllerBase
                     // Process document through LeadPortfolioAgent (includes document type checking and extraction)
                     LeadPortfolioAgent leadPortfolioAgent = new LeadPortfolioAgent(_configuration);
                     var processingResult = await leadPortfolioAgent.StartProcessing(documentPath, file.FileName, file.Length);
-                    
+  
                     _logger.LogInformation("Document processing completed for {FileName}. Identified as: {IdentifiedType} with confidence: {Confidence}", 
                         file.FileName, processingResult.DocumentType, processingResult.Confidence);
 
@@ -200,6 +233,31 @@ public class DocumentUploadController : ControllerBase
                             FilePath = documentPath
                         });
                     }
+           
+                if (validDocuments.Count > 0 && 
+                    validDocuments.Where(doc => doc.DocumentType == "PortfolioForm").FirstOrDefault() != null)
+                {
+                    var portfolioForm = validDocuments.Where(doc => doc.DocumentType == "PortfolioForm").FirstOrDefault();
+                    PortfolioValidatorTool portfolioValidatorTool = new PortfolioValidatorTool(_portfolioValidatorAgent);
+                    
+                    // Send file upload status via SignalR
+                    await _signalRService.SendFileUploadStatusAsync(portfolioId, "Processing", "Portfolio form detected, starting validation...");
+                    
+                    // Send validation progress
+                    await _signalRService.SendValidationProgressAsync(portfolioId, 1, 3, "Portfolio validation started");
+                    
+                    var validationResult = await portfolioValidatorTool.ValidatePortfolioFormAsync(processingResult);
+                    
+                    // Send validation progress
+                    await _signalRService.SendValidationProgressAsync(portfolioId, 2, 3, "Portfolio validation completed");
+                    
+                    // Send validation complete with result
+                    await _signalRService.SendValidationCompleteAsync(portfolioId, new { 
+                        fileName = portfolioForm?.FileName,
+                        validationResult = validationResult,
+                        status = "Completed"
+                    });
+                }
                 }
                 catch (Exception ex)
                 {
@@ -216,6 +274,10 @@ public class DocumentUploadController : ControllerBase
 
             _logger.LogInformation("Portfolio processing completed for {PortfolioId}. Valid documents: {ValidCount}, Invalid documents: {InvalidCount}", 
                 portfolioId, validDocuments.Count, invalidDocuments.Count);
+
+            // Send final upload status via SignalR
+            await _signalRService.SendFileUploadStatusAsync(portfolioId, "Completed", 
+                $"Portfolio processing completed. Valid: {validDocuments.Count}, Invalid: {invalidDocuments.Count}");
 
             // Trigger agent-based validation workflow only for valid documents
             // if (validDocuments.Any())
@@ -250,8 +312,33 @@ public class DocumentUploadController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing portfolio upload");
+            
+            // Send error status via SignalR if portfolioId is available
+            if (!string.IsNullOrEmpty(portfolioId))
+            {
+                await _signalRService.SendValidationErrorAsync(portfolioId, $"Upload failed: {ex.Message}");
+            }
+            
             return StatusCode(500, new { Error = "Failed to process document upload" });
         }
+    }
+    
+    private string GetContentTypeFromExtension(string extension)
+    {
+        return extension.ToLowerInvariant() switch
+        {
+            ".pdf" => "application/pdf",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".bmp" => "image/bmp",
+            ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ".xls" => "application/vnd.ms-excel",
+            ".csv" => "text/csv",
+            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".doc" => "application/msword",
+            _ => "application/octet-stream"
+        };
     }
 
     private bool IsValidFileType(IFormFile file)
@@ -272,6 +359,8 @@ public class DocumentUploadController : ControllerBase
 
         return allowedTypes.Contains(file.ContentType);
     }
+
+
 
 }
 

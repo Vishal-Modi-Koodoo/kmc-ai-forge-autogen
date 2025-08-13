@@ -63,6 +63,7 @@ namespace KMC_Forge_BTL_Configurations
         public string PdfDataExtractorPromptPath => _configuration["FilePaths:PdfDataExtractorPrompt"] ?? "Prompts/PDFDataExtractorPrompt.txt";
         public string ImageDataExtractorPromptPath => _configuration["FilePaths:ImageDataExtractorPrompt"] ?? "Prompts/ImageDataExtractorPrompt.txt";
         public string DocumentIdentifierPromptPath => _configuration["FilePaths:DocumentIdentifierPrompt"] ?? "Prompts/DocumentIdentifierPrompt.txt";
+        public string PortfolioValidatorPrompt => _configuration["FilePaths:PortfolioValidatorPrompt"] ?? "Prompts/PortfolioValidatorPrompt.txt";
 
         // Retry Configuration
         public int MaxRetries => int.TryParse(_configuration["RetrySettings:MaxRetries"], out int maxRetries) ? maxRetries : 3;

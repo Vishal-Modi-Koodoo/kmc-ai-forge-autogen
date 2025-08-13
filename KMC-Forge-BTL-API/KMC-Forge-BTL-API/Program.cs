@@ -1,10 +1,16 @@
 using KMC_AI_Forge_BTL_Agent.Contracts;
 using KMC_AI_Forge_BTL_Agent.Services;
 using KMC_Forge_BTL_API.Services;
+using KMC_Forge_BTL_API.Hubs;
 using KMC_Forge_BTL_Configurations;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Http.Features;
+using KMC_Forge_BTL_API.Contracts;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +61,14 @@ builder.Services.AddTransient<IDocumentRetrievalService, DocumentRetrievalServic
 builder.Services.AddTransient<IPortfolioValidationService, PortfolioValidationService>();
 builder.Services.AddTransient<IAgentRuntime, AgentRuntime>();
 
+// Add SignalR
+builder.Services.AddSignalR();
+
+// Add SignalR services
+builder.Services.AddScoped<ISignalRService, SignalRService>();
+
+
+
 // Add custom logging
 builder.Services.AddSingleton<ILoggerFactory, CustomLoggerFactory>();
 builder.Services.AddSingleton<IExternalScopeProvider, LoggerExternalScopeProvider>();
@@ -88,6 +102,9 @@ app.UseStaticFiles();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Map SignalR Hub
+app.MapHub<PortfolioHub>("/portfolioHub");
 
 app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 
