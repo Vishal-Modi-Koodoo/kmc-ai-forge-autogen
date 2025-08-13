@@ -63,9 +63,16 @@ namespace KMC_Forge_BTL_Configurations
         public string PdfDataExtractorPromptPath => _configuration["FilePaths:PdfDataExtractorPrompt"] ?? "Prompts/PDFDataExtractorPrompt.txt";
         public string ImageDataExtractorPromptPath => _configuration["FilePaths:ImageDataExtractorPrompt"] ?? "Prompts/ImageDataExtractorPrompt.txt";
         public string DocumentIdentifierPromptPath => _configuration["FilePaths:DocumentIdentifierPrompt"] ?? "Prompts/DocumentIdentifierPrompt.txt";
+        public string CompanyNumberExtractorPromptPath => _configuration["FilePaths:CompanyNumberExtractorPrompt"] ?? "Prompts/CompanyNumberExtractorPrompt.txt";
 
         // Retry Configuration
         public int MaxRetries => int.TryParse(_configuration["RetrySettings:MaxRetries"], out int maxRetries) ? maxRetries : 3;
         public int RetryDelayMs => int.TryParse(_configuration["RetrySettings:RetryDelayMs"], out int delay) ? delay : 2000;
+
+        // MongoDB Configuration
+        public string MongoDBConnectionString => _configuration["MongoDB:ConnectionString"] ?? "mongodb://localhost:27017";
+        public string MongoDBDatabaseName => _configuration["MongoDB:DatabaseName"] ?? "KMCForgeBTL";
+        public string MongoDBCollectionName => _configuration["MongoDB:CollectionName"] ?? "PortfolioExtractedData";
+
     }
 }

@@ -1,5 +1,5 @@
 using KMC_Forge_BTL_Configurations;
-using KMC_FOrge_BTL_Models.ImageDataExtractorResponse;
+using KMC_Forge_BTL_Models.ImageDataExtractorResponse;
 using System.Text;
 using System.Text.Json;
 
@@ -9,7 +9,7 @@ namespace KMC_Forge_BTL_Core_Agent.Tools
     {
         private readonly AppConfiguration _config = AppConfiguration.Instance;
         private readonly HttpClient _httpClient;
-        private readonly string _apiEndpoint;
+        private  string _apiEndpoint;
 
         public ImageExtractionTool(string apiEndpoint = "https://api.openai.com/v1/chat/completions")
         {
@@ -31,7 +31,8 @@ namespace KMC_Forge_BTL_Core_Agent.Tools
                 // Prepare the request
                 var requestBody = new
                 {
-                    model = "gpt-4-vision-preview",
+                    model = "gpt-4o",
+                    response_format = new { type = "json_object" },
                     messages = new[]
                     {
                         new

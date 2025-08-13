@@ -2,9 +2,12 @@ using KMC_AI_Forge_BTL_Agent.Contracts;
 using KMC_AI_Forge_BTL_Agent.Services;
 using KMC_Forge_BTL_API.Services;
 using KMC_Forge_BTL_Configurations;
-using Microsoft.OpenApi.Models;
+using KMC_Forge_BTL_Database.Services;
+using KMC_Forge_BTL_Database.Interfaces;
+using KMC_Forge_BTL_Database.Repositories;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +57,15 @@ builder.Services.AddTransient<IDocumentStorageService, DocumentStorageService>()
 builder.Services.AddTransient<IDocumentRetrievalService, DocumentRetrievalService>();
 builder.Services.AddTransient<IPortfolioValidationService, PortfolioValidationService>();
 builder.Services.AddTransient<IAgentRuntime, AgentRuntime>();
+
+// Add MongoDB services
+builder.Services.AddSingleton<MongoDbService>();
+builder.Services.AddScoped<IPortfolioUploadRepository>(provider =>
+{
+    var mongoDbService = provider.GetRequiredService<MongoDbService>();
+    var database = mongoDbService.GetDatabase();
+    return new PortfolioUploadRepository(database);
+});
 
 // Add custom logging
 builder.Services.AddSingleton<ILoggerFactory, CustomLoggerFactory>();

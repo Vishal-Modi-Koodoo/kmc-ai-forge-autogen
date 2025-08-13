@@ -16,8 +16,10 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
     public class DocumentValidatorAgent
     {
         private readonly PdfExtractionTool _pdfExtractionTool;
+        private readonly CompanyNumberExtractorTool _companyNumberExtractorTool;
         private readonly MiddlewareStreamingAgent<OpenAIChatAgent> _pdfAnalyserAgent;
         private readonly MiddlewareStreamingAgent<OpenAIChatAgent> _imageAnalyserAgent;
+        private readonly MiddlewareStreamingAgent<OpenAIChatAgent> _companyNumberExtractorAgent;
         private readonly ImageExtractionTool _imageExtractionTool;
         private readonly DocumentRetrievalTool _documentRetrievalTool;
         private readonly DocumentIdentificationTool _documentIdentificationTool;
@@ -40,6 +42,7 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             string pdfAnalysisPrompt = File.ReadAllText(config.PdfDataExtractorPromptPath);
             string imageAnalysisPrompt = File.ReadAllText(config.ImageDataExtractorPromptPath);
             string documentIdentifierPrompt = File.ReadAllText(config.DocumentIdentifierPromptPath);
+            string companyNumberExtractorPrompt = File.ReadAllText(config.CompanyNumberExtractorPromptPath);
 
             if (_openAIClient != null)
             {
@@ -52,6 +55,10 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                 // Create a document identification agent for the tool
                 var documentIdentificationAgent = new DocumentAnalyserAgent(_openAIClient, config.AzureOpenAIModel, documentIdentifierPrompt, "document_identifier").RegisterMessageConnector().RegisterPrintMessage();
                 _documentIdentificationTool = new DocumentIdentificationTool(documentIdentificationAgent);
+                
+                // Create a company number extractor agent and tool
+                _companyNumberExtractorAgent = new DocumentAnalyserAgent(_openAIClient, config.AzureOpenAIModel, companyNumberExtractorPrompt, "company_number_extractor").RegisterMessageConnector().RegisterPrintMessage();
+                _companyNumberExtractorTool = new CompanyNumberExtractorTool(_companyNumberExtractorAgent);
             }
         }
 
@@ -69,7 +76,8 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                         Confidence = 0.0,
                         DocumentContent = "",
                         PdfData = null,
-                        ImageData = null,
+                        ImageDataList = new List<ImageExtractionResult>(),
+                        CompanyNumber = "",
                         FilePath = filePath,
                         FileName = fileName,
                         FileSize = fileSize,
@@ -105,7 +113,8 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                             Confidence = 0.0,
                             DocumentContent = "",
                             PdfData = null,
-                            ImageData = null,
+                            ImageDataList = new List<ImageExtractionResult>(),
+                            CompanyNumber = "",
                             FilePath = filePath,
                             FileName = fileName,
                             FileSize = fileSize,
@@ -138,7 +147,7 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                         Confidence = 0.0,
                         DocumentContent = "",
                         PdfData = null,
-                        ImageData = null,
+                        CompanyNumber = "",
                         FilePath = filePath,
                         FileName = fileName,
                         FileSize = fileSize,
@@ -151,25 +160,45 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                 {
                     // Step 5: Document is valid, proceed with extraction based on document type and file type
                     CompanyInfo? pdfData = null;
-                    ImageExtractionResult? imageData = null;
+                    List<ImageExtractionResult> imageDataList = new List<ImageExtractionResult>();
+                    string companyNumber = "";
                     
-                    // Only extract PDF data for PortfolioForm documents
-                    if (identificationResult.DocumentType == KMC_Forge_BTL_Models.Enums.DocumentType.PortfolioForm && 
-                        filePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                    // Extract data based on document type
+                    if (identificationResult.DocumentType == KMC_Forge_BTL_Models.Enums.DocumentType.PortfolioForm)
                     {
-                        // Extract PDF data using the already extracted content
+                        // Extract PDF data for PortfolioForm documents
                         pdfData = await _pdfExtractionTool.ExtractDataAsync(documentContent);
-                        CompanyHouseDetailsCapturer companyHouseDetailsCapturer = new CompanyHouseDetailsCapturer("03489004");
-                        var path = await companyHouseDetailsCapturer.CaptureAllIncludingChargesAsync();
+                        
                     }
-                    else if (filePath.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || 
-                             filePath.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) || 
-                             filePath.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
-                             filePath.EndsWith(".gif", StringComparison.OrdinalIgnoreCase) ||
-                             filePath.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase))
+                    else if (identificationResult.DocumentType == KMC_Forge_BTL_Models.Enums.DocumentType.ApplicationForm)
                     {
-                        // Extract image data
-                        imageData = await _imageExtractionTool.ExtractDataAsync(filePath);
+                        // Extract company number for ApplicationForm documents
+                        var companyNumberResult = await _companyNumberExtractorTool.ExtractCompanyNumberAsync(documentContent);
+                        if (companyNumberResult.IsSuccessful)
+                        {
+                            companyNumber = companyNumberResult.CompanyNumber;
+                            CompanyHouseDetailsCapturer companyHouseDetailsCapturer = new CompanyHouseDetailsCapturer(companyNumber);
+                            var path = await companyHouseDetailsCapturer.CaptureAllIncludingChargesAsync();
+
+                            var screenshotsBasePath = Path.Combine(Directory.GetCurrentDirectory(), "Screenshots");
+                            var companyPath = Path.Combine(screenshotsBasePath, companyNumber);
+                            var chargesPath = Path.Combine(companyPath, "Charges");
+                            var chargeLinksPath = Path.Combine(chargesPath, "Charge_Links");
+
+                            var chargeLinks = Directory.GetFiles(chargeLinksPath, "*.png", SearchOption.AllDirectories);
+                            foreach (var chargeLink in chargeLinks)
+                            {
+                                try
+                                {
+                                    var extractedImageData = await _imageExtractionTool.ExtractDataAsync(chargeLink);
+                                    imageDataList.Add(extractedImageData);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"Error extracting image data from {chargeLink}: {ex.Message}");
+                                }
+                            }
+                        }
                     }
                     
                     return new DocumentProcessingResult
@@ -179,7 +208,8 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                         Confidence = identificationResult.Confidence,
                         DocumentContent = documentContent,
                         PdfData = pdfData,
-                        ImageData = imageData,
+                        ImageDataList = imageDataList,
+                        CompanyNumber = companyNumber,
                         FilePath = filePath,
                         FileName = fileName,
                         FileSize = fileSize,
@@ -196,7 +226,8 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                         Confidence = identificationResult.Confidence,
                         DocumentContent = documentContent,
                         PdfData = null,
-                        ImageData = null,
+                        ImageDataList = new List<ImageExtractionResult>(),
+                        CompanyNumber = "",
                         FilePath = filePath,
                         FileName = fileName,
                         FileSize = fileSize,
@@ -211,9 +242,10 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                     IsValid = false,
                     DocumentType = KMC_Forge_BTL_Models.Enums.DocumentType.Unknown,
                     Confidence = 0.0,
-                    DocumentContent = "",
+                    DocumentContent = "",   
                     PdfData = null,
-                    ImageData = null,
+                    ImageDataList = new List<ImageExtractionResult>(),
+                    CompanyNumber = "",
                     FilePath = filePath,
                     FileName = fileName,
                     FileSize = fileSize,
@@ -248,7 +280,8 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
         public double Confidence { get; set; }
         public string DocumentContent { get; set; } = "";
         public KMC_Forge_BTL_Models.PDFExtractorResponse.CompanyInfo? PdfData { get; set; }
-        public ImageExtractionResult? ImageData { get; set; }
+        public List<ImageExtractionResult> ImageDataList { get; set; } = new List<ImageExtractionResult>();
+        public string CompanyNumber { get; set; } = "";
         public string FilePath { get; set; } = "";
         public string FileName { get; set; } = "";
         public long FileSize { get; set; }

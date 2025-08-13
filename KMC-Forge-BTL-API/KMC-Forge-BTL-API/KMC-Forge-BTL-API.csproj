@@ -18,5 +18,6 @@
     <ProjectReference Include="..\KMC-Forge-BTL-Core-Agent\KMC-Forge-BTL-Core-Agent.csproj" />
     <ProjectReference Include="..\KMC-Forge-BTL-Configurations\KMC-Forge-BTL-Configurations.csproj" />
     <ProjectReference Include="..\KMC-FOrge-BTL-Models\KMC-Forge-BTL-Models.csproj" />
+    <ProjectReference Include="..\KMC-Forge-BTL-Database\KMC-Forge-BTL-Database.csproj" />
   </ItemGroup>
 </Project>

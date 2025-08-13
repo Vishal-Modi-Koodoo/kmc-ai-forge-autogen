@@ -3,6 +3,14 @@ using KMC_AI_Forge_BTL_Agent.Contracts;
 using KMC_AI_Forge_BTL_Agent.Models;
 using KMC_Forge_BTL_Core_Agent.Agents;
 using KMC_AI_Forge_BTL_Agent.AgentInitiatorLayer;
+using KMC_Forge_BTL_Models;
+using KMC_Forge_BTL_Models.PDFExtractorResponse;
+using KMC_Forge_BTL_Models.ImageDataExtractorResponse;
+using KMC_Forge_BTL_Models.DBModels;
+using KMC_Forge_BTL_Database.Services;
+using KMC_Forge_BTL_Database.Repositories;
+using KMC_Forge_BTL_Database.Interfaces;
+using UploadedDocument = KMC_AI_Forge_BTL_Agent.Models.UploadedDocument;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -12,12 +20,19 @@ public class DocumentUploadController : ControllerBase
     private readonly IPortfolioValidationService _validationService;
     private readonly ILogger<DocumentUploadController> _logger;
     private readonly IConfiguration _configuration;
+    private readonly MongoDbService _mongoDbService;
+    private readonly IPortfolioUploadRepository _portfolioUploadRepository;
 
-    public DocumentUploadController(IDocumentStorageService documentStorage, IPortfolioValidationService validationService, ILogger<DocumentUploadController> logger, IConfiguration configuration){
+
+    public DocumentUploadController(IDocumentStorageService documentStorage, 
+    IPortfolioValidationService validationService, ILogger<DocumentUploadController> logger, 
+    IConfiguration configuration, MongoDbService mongoDbService, IPortfolioUploadRepository portfolioUploadRepository){
         _documentStorage = documentStorage;
         _validationService = validationService;
         _logger = logger;
         _configuration = configuration;
+        _mongoDbService = mongoDbService;
+        _portfolioUploadRepository = portfolioUploadRepository;
     }
 
     /*
@@ -122,14 +137,16 @@ public class DocumentUploadController : ControllerBase
     {
         var portfolioId = Guid.NewGuid().ToString();
         var validDocuments = new List<UploadedDocument>();
-        var invalidDocuments = new List<KMC_Forge_BTL_Models.InvalidDocumentInfo>();
-
+        var invalidDocuments = new List<InvalidDocumentInfo>();
+        var portfolioData = new CompanyInfo();
+        var chargesData = new List<ImageExtractionResult>();
         try
         {
             if (files == null || !files.Any())
             {
                 return BadRequest("No files uploaded");
             }
+            var processingStartTime = DateTime.UtcNow;
 
             // Process each uploaded document with AI identification
             foreach (var file in files)
@@ -139,7 +156,7 @@ public class DocumentUploadController : ControllerBase
                     // Validate file size
                     if (file.Length > 50 * 1024 * 1024) // 50MB limit
                     {
-                        invalidDocuments.Add(new KMC_Forge_BTL_Models.InvalidDocumentInfo
+                        invalidDocuments.Add(new InvalidDocumentInfo
                         {
                             FileName = file.FileName,
                             ExpectedType = "Unknown",
@@ -152,7 +169,7 @@ public class DocumentUploadController : ControllerBase
                     // Validate file type (basic validation)
                     if (!IsValidFileType(file))
                     {
-                        invalidDocuments.Add(new KMC_Forge_BTL_Models.InvalidDocumentInfo
+                        invalidDocuments.Add(new InvalidDocumentInfo
                         {
                             FileName = file.FileName,
                             ExpectedType = "Unknown",
@@ -171,6 +188,19 @@ public class DocumentUploadController : ControllerBase
                     
                     _logger.LogInformation("Document processing completed for {FileName}. Identified as: {IdentifiedType} with confidence: {Confidence}", 
                         file.FileName, processingResult.DocumentType, processingResult.Confidence);
+                    // INSERT_YOUR_CODE
+                    
+                    if (!chargesData.Any() && processingResult?.ImageDataList.Any() == true)
+                    {
+                        chargesData = processingResult?.ImageDataList ?? new List<ImageExtractionResult>();
+                    }
+
+                    // INSERT_YOUR_CODE
+                    if (portfolioData.CompanyName == null && processingResult?.PdfData?.CompanyName != null)
+                    {
+                        portfolioData = processingResult?.PdfData ?? new CompanyInfo();
+                    }
+                
 
                     if (processingResult.IsValid)
                     {
@@ -189,7 +219,7 @@ public class DocumentUploadController : ControllerBase
                     }
                     else
                     {
-                        invalidDocuments.Add(new KMC_Forge_BTL_Models.InvalidDocumentInfo
+                        invalidDocuments.Add(new InvalidDocumentInfo
                         {
                             FileName = file.FileName,
                             ExpectedType = "Unknown",
@@ -204,7 +234,7 @@ public class DocumentUploadController : ControllerBase
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error processing document {FileName}", file.FileName);
-                    invalidDocuments.Add(new KMC_Forge_BTL_Models.InvalidDocumentInfo
+                    invalidDocuments.Add(new InvalidDocumentInfo
                     {
                         FileName = file.FileName,
                         ExpectedType = "Unknown",
@@ -227,13 +257,18 @@ public class DocumentUploadController : ControllerBase
             //         var fileStream = await leadPortfolioAgent.StartDocumentRetrieval(firstDocumentUri);
             //     }
             // }
+            var processingEndTime = DateTimeOffset.UtcNow;
 
             // Create extended response with validation results
+
+            
             var response = new
             {
                 PortfolioId = portfolioId,
-                EstimatedProcessingTime = "3-5 minutes",
-                Status = "Processing",
+                EstimatedProcessingTime = (processingEndTime - processingStartTime).TotalMinutes.ToString("F1") + " minutes",
+                Status = "Done",
+                PortfolioData = portfolioData,
+                ChargesData = chargesData,
                 UploadedDocuments = validDocuments,
                 InvalidDocuments = invalidDocuments,
                 Summary = new
@@ -245,6 +280,100 @@ public class DocumentUploadController : ControllerBase
                 }
             };
 
+            // INSERT_YOUR_CODE
+
+            // Save the upload summary to MongoDB
+            try
+            {
+                var database = _mongoDbService?.GetDatabase();
+                if (database != null)
+                {
+                    var portfolioUpload = new PortfolioUploadResponse
+                    {
+                        PortfolioId = portfolioId,
+                        EstimatedProcessingTime = (processingEndTime - processingStartTime).TotalMinutes.ToString("F1") + " minutes",
+                        Status = "Done",
+                        PortfolioData = new CompanyInfoCollection
+                        {
+                            CompanyName = portfolioData?.CompanyName ?? "Unknown",
+                            Properties = portfolioData?.Properties?.Select(p => new PropertyInfoCollection
+                            {
+                                PropertyAddress = p.PropertyAddress,
+                                PropertyType = p.PropertyType,
+                                YearPurchased = p.YearPurchased,
+                                CurrentEstimatedValue = p.CurrentEstimatedValue,
+                                RentalIncomePerMonth = p.RentalIncomePerMonth,
+                                MortgagePaymentPerMonth = p.MortgagePaymentPerMonth,
+                                Owner = p.Owner,
+                                Lender = p.Lender,
+                                DateOfMortgage = p.DateOfMortgage,
+                                MortgageBalanceOutstanding = p.MortgageBalanceOutstanding,
+                                AnnualServiceCharge = p.AnnualServiceCharge,
+                                AnnualGroundRent = p.AnnualGroundRent,
+                                CompanyInfoId = portfolioId,
+                                PortfolioId = portfolioId,
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow
+                            }).ToList() ?? new List<PropertyInfoCollection>(),
+                            DocumentId = portfolioId
+                        },
+                        ChargesData = chargesData?.Select(c => new ImageExtractionResultCollection
+                        {
+                            PersonsEntitled = c.PersonsEntitled,
+                            BriefDescription = c.BriefDescription,
+                            PortfolioId = portfolioId,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        }).ToList() ?? new List<ImageExtractionResultCollection>(),
+                        UploadedDocuments = validDocuments?.Select(doc => new UploadedDocumentCollection
+                        {
+                            DocumentId = doc.DocumentId,
+                            DocumentType = doc.DocumentType,
+                            FileName = doc.FileName,
+                            FilePath = doc.FilePath,
+                            ContentType = doc.ContentType,
+                            FileSize = doc.FileSize,
+                            UploadTimestamp = doc.UploadTimestamp,
+                            PortfolioId = doc.PortfolioId,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        }).ToList() ?? new List<UploadedDocumentCollection>(),
+                        InvalidDocuments = invalidDocuments?.Select(doc => new InvalidDocumentInfoCollection
+                        {
+                            FileName = doc.FileName,
+                            ExpectedType = doc.ExpectedType,
+                            IdentifiedType = doc.IdentifiedType,
+                            Confidence = doc.Confidence,
+                            Reason = doc.Reason,
+                            FileSize = doc.FileSize,
+                            FilePath = doc.FilePath,
+                            PortfolioId = portfolioId,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        }).ToList() ?? new List<InvalidDocumentInfoCollection>(),
+                        Summary = new UploadSummary
+                        {
+                            TotalDocuments = files.Count(),
+                            ValidDocuments = validDocuments.Count,
+                            InvalidDocuments = invalidDocuments.Count,
+                            ProcessingCompleted = true
+                        },
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+
+                    await _portfolioUploadRepository.CreateAsync(portfolioUpload);
+                }
+                else
+                {
+                    _logger.LogWarning("MongoDB database instance is null. Skipping MongoDB insert.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to insert portfolio upload summary into MongoDB for PortfolioId {PortfolioId}", portfolioId);
+            }
+
             return Ok(response);
         }
         catch (Exception ex)
@@ -253,6 +382,7 @@ public class DocumentUploadController : ControllerBase
             return StatusCode(500, new { Error = "Failed to process document upload" });
         }
     }
+
 
     private bool IsValidFileType(IFormFile file)
     {
