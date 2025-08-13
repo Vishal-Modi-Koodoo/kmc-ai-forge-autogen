@@ -7,6 +7,7 @@ using KMC_Forge_BTL_Models;
 using KMC_Forge_BTL_Models.PDFExtractorResponse;
 using KMC_Forge_BTL_Models.ImageDataExtractorResponse;
 using KMC_Forge_BTL_Models.DBModels;
+using KMC_Forge_BTL_Models.DocumentIdentificationResponse;
 using KMC_Forge_BTL_Database.Services;
 using KMC_Forge_BTL_Database.Repositories;
 using KMC_Forge_BTL_Database.Interfaces;
@@ -22,17 +23,18 @@ public class DocumentUploadController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly MongoDbService _mongoDbService;
     private readonly IPortfolioUploadRepository _portfolioUploadRepository;
-
+    private readonly LeadPortfolioAgent _leadPortfolioAgent;
 
     public DocumentUploadController(IDocumentStorageService documentStorage, 
     IPortfolioValidationService validationService, ILogger<DocumentUploadController> logger, 
-    IConfiguration configuration, MongoDbService mongoDbService, IPortfolioUploadRepository portfolioUploadRepository){
+    IConfiguration configuration, MongoDbService mongoDbService, IPortfolioUploadRepository portfolioUploadRepository, LeadPortfolioAgent leadPortfolioAgent){
         _documentStorage = documentStorage;
         _validationService = validationService;
         _logger = logger;
         _configuration = configuration;
         _mongoDbService = mongoDbService;
         _portfolioUploadRepository = portfolioUploadRepository;
+        _leadPortfolioAgent = leadPortfolioAgent;
     }
 
     /*
@@ -140,32 +142,23 @@ public class DocumentUploadController : ControllerBase
         var invalidDocuments = new List<InvalidDocumentInfo>();
         var portfolioData = new CompanyInfo();
         var chargesData = new List<ImageExtractionResult>();
+        var identifiedDocuments = new List<DocumentProcessingResult>();
         try
         {
             if (files == null || !files.Any())
             {
                 return BadRequest("No files uploaded");
             }
+            
             var processingStartTime = DateTime.UtcNow;
 
             // Process each uploaded document with AI identification
+
+            //Step 1: Identify document type
             foreach (var file in files)
             {
                 try
                 {
-                    // Validate file size
-                    if (file.Length > 50 * 1024 * 1024) // 50MB limit
-                    {
-                        invalidDocuments.Add(new InvalidDocumentInfo
-                        {
-                            FileName = file.FileName,
-                            ExpectedType = "Unknown",
-                            Reason = "File size exceeds 50MB limit",
-                            FileSize = file.Length
-                        });
-                        continue;
-                    }
-
                     // Validate file type (basic validation)
                     if (!IsValidFileType(file))
                     {
@@ -183,54 +176,23 @@ public class DocumentUploadController : ControllerBase
                     var documentPath = await _documentStorage.StoreDocumentLocally(file, portfolioId, "Unknown");
 
                     // Process document through LeadPortfolioAgent (includes document type checking and extraction)
-                    LeadPortfolioAgent leadPortfolioAgent = new LeadPortfolioAgent(_configuration);
-                    var processingResult = await leadPortfolioAgent.StartProcessing(documentPath, file.FileName, file.Length);
-                    
-                    _logger.LogInformation("Document processing completed for {FileName}. Identified as: {IdentifiedType} with confidence: {Confidence}", 
-                        file.FileName, processingResult.DocumentType, processingResult.Confidence);
-                    // INSERT_YOUR_CODE
-                    
-                    if (!chargesData.Any() && processingResult?.ImageDataList.Any() == true)
-                    {
-                        chargesData = processingResult?.ImageDataList ?? new List<ImageExtractionResult>();
-                    }
+                    // Use the LeadPortfolioAgent instance from the controller's constructor
+                  
+                    var identifiedDocument = await _leadPortfolioAgent.IdentifyDocumentType(documentPath, file.FileName, file.Length);
+                    identifiedDocuments.Add(identifiedDocument);
 
-                    // INSERT_YOUR_CODE
-                    if (portfolioData.CompanyName == null && processingResult?.PdfData?.CompanyName != null)
+                    validDocuments.Add(new UploadedDocument
                     {
-                        portfolioData = processingResult?.PdfData ?? new CompanyInfo();
-                    }
-                
-
-                    if (processingResult.IsValid)
-                    {
-                        var uploadedDoc = new UploadedDocument
-                        {
-                            DocumentId = Guid.NewGuid().ToString(),
-                            DocumentType = processingResult.DocumentType.ToString(),
-                            FileName = file.FileName,
-                            FilePath = documentPath,
-                            FileSize = file.Length,
-                            UploadTimestamp = DateTimeOffset.UtcNow,
-                            PortfolioId = portfolioId,
-                            ContentType = file.ContentType
-                        };
-                        validDocuments.Add(uploadedDoc);
-                    }
-                    else
-                    {
-                        invalidDocuments.Add(new InvalidDocumentInfo
-                        {
-                            FileName = file.FileName,
-                            ExpectedType = "Unknown",
-                            IdentifiedType = processingResult.DocumentType.ToString(),
-                            Confidence = processingResult.Confidence,
-                            Reason = processingResult.ProcessingMessage,
-                            FileSize = file.Length,
-                            FilePath = documentPath
-                        });
-                    }
-                }
+                        DocumentId = Guid.NewGuid().ToString(),
+                        DocumentType = identifiedDocument.IdentificationResult.DocumentType.ToString(),
+                        FileName = file.FileName,
+                        FilePath = documentPath,
+                        ContentType = file.ContentType,
+                        FileSize = file.Length,
+                        UploadTimestamp = DateTime.UtcNow,
+                        PortfolioId = portfolioId
+                    });
+                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error processing document {FileName}", file.FileName);
@@ -244,28 +206,54 @@ public class DocumentUploadController : ControllerBase
                 }
             }
 
-            _logger.LogInformation("Portfolio processing completed for {PortfolioId}. Valid documents: {ValidCount}, Invalid documents: {InvalidCount}", 
-                portfolioId, validDocuments.Count, invalidDocuments.Count);
+            if(invalidDocuments.Count > 0)
+            {
+                // send red signal to UI
+            }
+            else
+            {
+                // send green signal to UI
+            }
 
-            // Trigger agent-based validation workflow only for valid documents
-            // if (validDocuments.Any())
-            // {
-            //     LeadPortfolioAgent leadPortfolioAgent = new LeadPortfolioAgent(_configuration);
-            //     var firstDocumentUri = validDocuments.FirstOrDefault()?.FilePath;
-            //     if (!string.IsNullOrEmpty(firstDocumentUri))
-            //     {
-            //         var fileStream = await leadPortfolioAgent.StartDocumentRetrieval(firstDocumentUri);
-            //     }
-            // }
+
+            //Step 2: Portfolio Completion
+            var portfolioFormData = GetDocumentProcessingResult(identifiedDocuments, KMC_Forge_BTL_Models.Enums.DocumentType.PortfolioForm);
+
+            if (portfolioData != null)
+            {
+                var processingResult = await _leadPortfolioAgent.PortfolioCompletion(portfolioFormData);
+                portfolioData = processingResult.PdfData;   
+                // send green signal to UI
+            }
+            else
+            {
+                // send red signal to UI
+            }
+
+            //Step 3: Company house validation
+
+            var applicationFormData = GetDocumentProcessingResult(identifiedDocuments, KMC_Forge_BTL_Models.Enums.DocumentType.ApplicationForm);
+
+            if (applicationFormData != null)
+            {
+                var processingResult = await _leadPortfolioAgent.ValidateCompanyHouseData(applicationFormData);
+                chargesData = processingResult.ImageDataList;
+                // send green signal to UI
+            }
+            else
+            {
+                // send red signal to UI
+            }
+
             var processingEndTime = DateTimeOffset.UtcNow;
 
             // Create extended response with validation results
-
+            string processingTime = (processingEndTime - processingStartTime).TotalMinutes.ToString("F1") + " minutes";
             
             var response = new
             {
                 PortfolioId = portfolioId,
-                EstimatedProcessingTime = (processingEndTime - processingStartTime).TotalMinutes.ToString("F1") + " minutes",
+                EstimatedProcessingTime = processingTime,
                 Status = "Done",
                 PortfolioData = portfolioData,
                 ChargesData = chargesData,
@@ -283,15 +271,28 @@ public class DocumentUploadController : ControllerBase
             // INSERT_YOUR_CODE
 
             // Save the upload summary to MongoDB
-            try
+            await SavePortfolioData(files, portfolioId, processingTime, portfolioData, chargesData, validDocuments, invalidDocuments);
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing portfolio upload");
+            return StatusCode(500, new { Error = "Failed to process document upload" });
+        }
+    }
+
+    private async Task SavePortfolioData(List<IFormFile> files,string portfolioId, string processingTime, CompanyInfo? portfolioData, List<ImageExtractionResult> chargesData, List<UploadedDocument> validDocuments, List<InvalidDocumentInfo> invalidDocuments)
+    {
+         try
             {
                 var database = _mongoDbService?.GetDatabase();
                 if (database != null)
                 {
-                    var portfolioUpload = new PortfolioUploadResponse
+                    var portfolioUpload = new KMC_Forge_BTL_Models.DBModels.PortfolioUploadResponse
                     {
                         PortfolioId = portfolioId,
-                        EstimatedProcessingTime = (processingEndTime - processingStartTime).TotalMinutes.ToString("F1") + " minutes",
+                        EstimatedProcessingTime = processingTime,
                         Status = "Done",
                         PortfolioData = new CompanyInfoCollection
                         {
@@ -353,9 +354,9 @@ public class DocumentUploadController : ControllerBase
                         }).ToList() ?? new List<InvalidDocumentInfoCollection>(),
                         Summary = new UploadSummary
                         {
-                            TotalDocuments = files.Count(),
-                            ValidDocuments = validDocuments.Count,
-                            InvalidDocuments = invalidDocuments.Count,
+                            TotalDocuments = files?.Count() ?? 0,
+                            ValidDocuments = validDocuments?.Count ?? 0,
+                            InvalidDocuments = invalidDocuments?.Count ?? 0,
                             ProcessingCompleted = true
                         },
                         CreatedAt = DateTime.UtcNow,
@@ -373,16 +374,7 @@ public class DocumentUploadController : ControllerBase
             {
                 _logger.LogError(ex, "Failed to insert portfolio upload summary into MongoDB for PortfolioId {PortfolioId}", portfolioId);
             }
-
-            return Ok(response);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing portfolio upload");
-            return StatusCode(500, new { Error = "Failed to process document upload" });
-        }
     }
-
 
     private bool IsValidFileType(IFormFile file)
     {
@@ -403,5 +395,10 @@ public class DocumentUploadController : ControllerBase
         return allowedTypes.Contains(file.ContentType);
     }
 
+private DocumentProcessingResult? GetDocumentProcessingResult(List<DocumentProcessingResult> identifiedDocuments, KMC_Forge_BTL_Models.Enums.DocumentType documentType)
+{
+     return identifiedDocuments.Where(x => x.IdentificationResult.DocumentType == documentType
+     && x.IsValid && x.IdentificationResult.Confidence >= 0.7 && x.IdentificationResult.IsSuccessful).FirstOrDefault();
+    }
 }
 

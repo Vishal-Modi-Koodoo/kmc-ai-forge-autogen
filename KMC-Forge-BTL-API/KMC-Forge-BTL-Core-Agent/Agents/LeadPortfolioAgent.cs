@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using KMC_Forge_BTL_Core_Agent.Agents;
 using KMC_Forge_BTL_Models.PDFExtractorResponse;
+using KMC_Forge_BTL_Models.DocumentIdentificationResponse;
 using Microsoft.Extensions.Configuration;
 
 namespace KMC_Forge_BTL_Core_Agent.Agents
@@ -14,10 +15,22 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             _documentValidatorAgent = new DocumentValidatorAgent(configuration);
         }
 
-        public async Task<DocumentProcessingResult> StartProcessing(string filePath, string fileName, long fileSize)
+        public async Task<DocumentProcessingResult> PortfolioCompletion(DocumentProcessingResult identificationResult)
         {
             // Process document through DocumentValidatorAgent (includes document type checking and extraction)
-            return await _documentValidatorAgent.StartProcessing(filePath, fileName, fileSize);
+            return await _documentValidatorAgent.PortfolioCompletion(identificationResult);
+        }
+
+        public async Task<DocumentProcessingResult> IdentifyDocumentType(string filePath, string fileName, long fileSize)
+        {
+            // Process document through DocumentValidatorAgent (includes document type checking and extraction)
+            return await _documentValidatorAgent.IdentifyDocumentType(filePath, fileName, fileSize);
+        }
+
+        public async Task<DocumentProcessingResult> ValidateCompanyHouseData(DocumentProcessingResult identificationResult)
+        {
+            // Process document through DocumentValidatorAgent (includes document type checking and extraction)
+            return await _documentValidatorAgent.ValidateCompanyHouseData(identificationResult);
         }
 
         public async Task<CompanyInfo> StartProcessing(string filePath, string imagePath)
