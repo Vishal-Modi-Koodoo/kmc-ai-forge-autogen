@@ -13,6 +13,7 @@ using KMC_Forge_BTL_Database.Repositories;
 using KMC_Forge_BTL_Database.Interfaces;
 using KMC_Forge_BTL_API.Services;
 using KMC_Forge_BTL_API.Hubs;
+using KMC_Forge_BTL_API.Enums;
 using UploadedDocument = KMC_AI_Forge_BTL_Agent.Models.UploadedDocument;
 
 [ApiController]
@@ -183,7 +184,19 @@ public class DocumentUploadController : ControllerBase
                     // Process document through LeadPortfolioAgent (includes document type checking and extraction)
                     var identifiedDocument = await _leadPortfolioAgent.IdentifyDocumentType(documentPath, file.FileName, file.Length);
                     identifiedDocuments.Add(identifiedDocument);
-
+                    // Only add to validDocuments if document type is not unknown, else mark as invalid
+                    if (identifiedDocument.IdentificationResult.DocumentType == KMC_Forge_BTL_Models.Enums.DocumentType.Unknown)
+                    {
+                        invalidDocuments.Add(new InvalidDocumentInfo
+                        {
+                            FileName = file.FileName,
+                            ExpectedType = "Unknown",
+                            Reason = "Document type could not be identified.",
+                            FileSize = file.Length
+                        });
+                        continue;
+                    }
+                    
                     validDocuments.Add(new UploadedDocument
                     {
                         DocumentId = Path.GetFileNameWithoutExtension(documentPath),
@@ -211,11 +224,27 @@ public class DocumentUploadController : ControllerBase
 
             if(invalidDocuments.Count > 0)
             {
-                // send red signal to UI
+                var failureUpdate = new ProcessingUpdate
+                {
+                    PortfolioId = portfolioId,
+                    Status = "DocumentValidation",
+                    Message = $"Document validation failed. {invalidDocuments.Count} invalid documents found.",
+                    ProcessingStatus = ProcessingStatus.Failure,
+                    ProcessingStep = ProcessingStep.DocumentValidation
+                };
+                await _signalRNotificationService.SendProcessingUpdateAsync(portfolioId, failureUpdate);
             }
             else
             {
-                // send green signal to UI
+                var successUpdate = new ProcessingUpdate
+                {
+                    PortfolioId = portfolioId,
+                    Status = "DocumentValidation",
+                    Message = "All documents updated successfully.",
+                    ProcessingStatus = ProcessingStatus.Success,
+                    ProcessingStep = ProcessingStep.DocumentValidation
+                };
+                await _signalRNotificationService.SendProcessingUpdateAsync(portfolioId, successUpdate);       
             }
 
 
@@ -227,9 +256,27 @@ public class DocumentUploadController : ControllerBase
                 var processingResult = await _leadPortfolioAgent.PortfolioCompletion(portfolioFormData);
                 portfolioData = processingResult.PdfData;   
                 // send green signal to UI
+                var successUpdate = new ProcessingUpdate
+                {
+                    PortfolioId = portfolioId,
+                    Status = "PortfolioCompletion",
+                    Message = "Portfolio data updated successfully.",
+                    ProcessingStatus = ProcessingStatus.Success,
+                    ProcessingStep = ProcessingStep.PortfolioCompletion
+                };
+                await _signalRNotificationService.SendProcessingUpdateAsync(portfolioId, successUpdate);    
             }
             else
             {
+                var failureUpdate = new ProcessingUpdate
+                {
+                    PortfolioId = portfolioId,
+                    Status = "PortfolioCompletion",
+                    Message = "Portfolio data not found.",
+                    ProcessingStatus = ProcessingStatus.Failure,
+                    ProcessingStep = ProcessingStep.PortfolioCompletion
+                };
+                await _signalRNotificationService.SendProcessingUpdateAsync(portfolioId, failureUpdate);
                 // send red signal to UI
             }
 
@@ -242,9 +289,27 @@ public class DocumentUploadController : ControllerBase
                 var processingResult = await _leadPortfolioAgent.ValidateCompanyHouseData(applicationFormData);
                 chargesData = processingResult.ImageDataList;
                 // send green signal to UI
+                var successUpdate = new ProcessingUpdate
+                {
+                    PortfolioId = portfolioId,
+                    Status = "CompanyHouseValidation",
+                    Message = "Company house data updated successfully.",
+                    ProcessingStatus = ProcessingStatus.Success,
+                    ProcessingStep = ProcessingStep.CompanyHouseValidation
+                };
+                await _signalRNotificationService.SendProcessingUpdateAsync(portfolioId, successUpdate);
             }
             else
             {
+                var failureUpdate = new ProcessingUpdate
+                {
+                    PortfolioId = portfolioId,
+                    Status = "CompanyHouseValidation",
+                    Message = "Company house data not found.",
+                    ProcessingStatus = ProcessingStatus.Failure,
+                    ProcessingStep = ProcessingStep.CompanyHouseValidation
+                };
+                await _signalRNotificationService.SendProcessingUpdateAsync(portfolioId, failureUpdate);
                 // send red signal to UI
             }
 

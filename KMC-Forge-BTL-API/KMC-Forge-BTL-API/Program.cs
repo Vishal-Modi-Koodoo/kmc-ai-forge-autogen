@@ -60,6 +60,18 @@ builder.Services.AddTransient<IPortfolioValidationService, PortfolioValidationSe
 builder.Services.AddTransient<IAgentRuntime, AgentRuntime>();
 builder.Services.AddTransient<KMC_Forge_BTL_Core_Agent.Agents.LeadPortfolioAgent>();
 
+// Add CORS services
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(builder =>
+    {
+        builder.SetIsOriginAllowed(origin => true)
+               .AllowAnyMethod()
+               .AllowAnyHeader()
+               .AllowCredentials();
+    });
+});
+
 // Add SignalR services
 builder.Services.AddSignalR();
 builder.Services.AddScoped<ISignalRNotificationService, SignalRNotificationService>();
@@ -98,6 +110,9 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// Use CORS before other middleware
+app.UseCors();
+
 app.UseHttpsRedirection();
 
 // Enable static files for custom Swagger UI CSS
@@ -109,7 +124,5 @@ app.MapControllers();
 
 // Map SignalR hub
 app.MapHub<DocumentProcessingHub>("/documentProcessingHub");
-
-app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 
 app.Run();
