@@ -57,6 +57,7 @@ builder.Services.AddTransient<IDocumentStorageService, DocumentStorageService>()
 builder.Services.AddTransient<IDocumentRetrievalService, DocumentRetrievalService>();
 builder.Services.AddTransient<IPortfolioValidationService, PortfolioValidationService>();
 builder.Services.AddTransient<IAgentRuntime, AgentRuntime>();
+builder.Services.AddTransient<KMC_Forge_BTL_Core_Agent.Agents.LeadPortfolioAgent>();
 
 // Add MongoDB services
 builder.Services.AddSingleton<MongoDbService>();

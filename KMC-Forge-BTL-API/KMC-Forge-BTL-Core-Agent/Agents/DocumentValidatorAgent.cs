@@ -62,11 +62,10 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             }
         }
 
-        public async Task<DocumentProcessingResult> StartProcessing(string filePath, string fileName, long fileSize)
+        public async Task<DocumentProcessingResult> IdentifyDocumentType(string filePath, string fileName, long fileSize)
         {
             try
             {
-                // Step 1: Validate file exists and extract content
                 if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
                 {
                     return new DocumentProcessingResult
@@ -85,98 +84,166 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                     };
                 }
 
-                string documentContent = "";
-                string fileExtension = Path.GetExtension(filePath).ToLower();
+                // Step 2: Process document identification
+                var identificationResult = await DocumentIdentificationProcess(filePath, fileName, fileSize);
+                return new DocumentProcessingResult
+                {
+                    IsValid = true,
+                    DocumentType = identificationResult.DocumentType,
+                    Confidence = identificationResult.Confidence,
+                    DocumentContent = identificationResult.DocumentContent,
+                    IdentificationResult = identificationResult,
+                    FilePath = filePath,
+                    FileName = fileName,
+                    FileSize = fileSize,
+                    ProcessingMessage = $"Document successfully identified as {identificationResult.DocumentType}"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new DocumentProcessingResult
+                {
+                    IsValid = false,
+                    DocumentType = KMC_Forge_BTL_Models.Enums.DocumentType.Unknown,
+                    Confidence = 0.0,
+                    DocumentContent = "",
+                    PdfData = null,
+                    ImageDataList = new List<ImageExtractionResult>(),
+                    CompanyNumber = "",
+                    FilePath = filePath,
+                    FileName = fileName,
+                    FileSize = fileSize,
+                    ProcessingMessage = $"Error identifying document type: {ex.Message}"
+                };
+            }
+        }
 
-                // Step 2: Extract text content based on file type
-                switch (fileExtension)
+        public async Task<DocumentProcessingResult> PortfolioCompletion(DocumentProcessingResult identificationResult)
+        {
+            try
+            {
+                // Step 3: Check if document type is valid (not Unknown)
+                // Step 4: Document is valid, proceed with extraction based on document type and file type
+                CompanyInfo? pdfData = null;
+                
+                // Extract PDF data for PortfolioForm documents
+                pdfData = await _pdfExtractionTool.ExtractDataAsync(identificationResult.DocumentContent);
+                    
+                return new DocumentProcessingResult
                 {
-                    case ".pdf":
-                        documentContent = PdfExtractor.ExtractTextFromPdf(filePath);
-                        break;
-                    case ".txt":
-                        documentContent = await File.ReadAllTextAsync(filePath);
-                        break;
-                    case ".jpg":
-                    case ".jpeg":
-                    case ".png":
-                    case ".gif":
-                    case ".bmp":
-                        // For images, we'll extract content later in the process
-                        documentContent = "";
-                        break;
-                    default:
-                        return new DocumentProcessingResult
-                        {
-                            IsValid = false,
-                            DocumentType = KMC_Forge_BTL_Models.Enums.DocumentType.Unknown,
-                            Confidence = 0.0,
-                            DocumentContent = "",
-                            PdfData = null,
-                            ImageDataList = new List<ImageExtractionResult>(),
-                            CompanyNumber = "",
-                            FilePath = filePath,
-                            FileName = fileName,
-                            FileSize = fileSize,
-                            ProcessingMessage = $"Unsupported file type: {fileExtension}"
-                        };
-                }
+                    IsValid = true,
+                    DocumentType = identificationResult.DocumentType,
+                    Confidence = identificationResult.Confidence,
+                    DocumentContent = identificationResult.DocumentContent,
+                    PdfData = pdfData,
+                    ImageDataList = new List<ImageExtractionResult>(),
+                    CompanyNumber = "",
+                    FilePath = identificationResult.FilePath,
+                    FileName = identificationResult.FileName,
+                    FileSize = identificationResult.FileSize,
+                    IdentificationResult = identificationResult.IdentificationResult,
+                    ProcessingMessage = $"Document successfully identified as {identificationResult.DocumentType}"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new DocumentProcessingResult
+                {
+                    IsValid = false,
+                    DocumentType = KMC_Forge_BTL_Models.Enums.DocumentType.Unknown,
+                    Confidence = 0.0,
+                    DocumentContent = "",   
+                    PdfData = null,
+                    ImageDataList = new List<ImageExtractionResult>(),
+                    CompanyNumber = "",
+                    IdentificationResult = identificationResult.IdentificationResult,
+                    ProcessingMessage = $"Processing error: {ex.Message}"
+                };
+            }
+        }
 
-                // Step 3: Identify document type using AI (for text-based files)
-                DocumentIdentificationResult identificationResult;
-                if (!string.IsNullOrWhiteSpace(documentContent))
-                {
-                    identificationResult = await _documentIdentificationTool.IdentifyDocumentTypeAsync(documentContent);
-                }
-                else if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png" || fileExtension == ".gif" || fileExtension == ".bmp")
-                {
-                    // For images, we'll process them directly without text extraction
-                    identificationResult = new DocumentIdentificationResult
+        private async Task<DocumentIdentificationProcessResult> DocumentIdentificationProcess(string filePath, string fileName, long fileSize)
+        {
+            string documentContent = "";
+            string fileExtension = Path.GetExtension(filePath).ToLower();
+
+            // Extract text content based on file type
+            switch (fileExtension)
+            {
+                case ".pdf":
+                    documentContent = PdfExtractor.ExtractTextFromPdf(filePath);
+                    break;
+                case ".txt":
+                    documentContent = await File.ReadAllTextAsync(filePath);
+                    break;
+                case ".jpg":
+                case ".jpeg":
+                case ".png":
+                case ".gif":
+                case ".bmp":
+                    // For images, we'll extract content later in the process
+                    documentContent = "";
+                    break;
+                default:
+                    return new DocumentIdentificationProcessResult
                     {
-                        DocumentType = KMC_Forge_BTL_Models.Enums.DocumentType.Unknown,
-                        Confidence = 0.8, // Assume valid for processing
-                        IsSuccessful = true
-                    };
-                }
-                else
-                {
-                    return new DocumentProcessingResult
-                    {
-                        IsValid = false,
+                        IsSuccessful = false,
                         DocumentType = KMC_Forge_BTL_Models.Enums.DocumentType.Unknown,
                         Confidence = 0.0,
                         DocumentContent = "",
-                        PdfData = null,
-                        CompanyNumber = "",
-                        FilePath = filePath,
-                        FileName = fileName,
-                        FileSize = fileSize,
-                        ProcessingMessage = "No text could be extracted from the document"
+                        ErrorMessage = $"Unsupported file type: {fileExtension}"
                     };
-                }
+            }
 
-                // Step 4: Check if document type is valid (not Unknown)
-                if (identificationResult.IsSuccessful && identificationResult.Confidence >= 0.7 && identificationResult.DocumentType != KMC_Forge_BTL_Models.Enums.DocumentType.Unknown)
+            // Identify document type using AI (for text-based files)
+            DocumentIdentificationResult identificationResult;
+            if (!string.IsNullOrWhiteSpace(documentContent))
+            {
+                identificationResult = await _documentIdentificationTool.IdentifyDocumentTypeAsync(documentContent);
+            }
+            else if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png" || fileExtension == ".gif" || fileExtension == ".bmp")
+            {
+                // For images, we'll process them directly without text extraction
+                identificationResult = new DocumentIdentificationResult
                 {
-                    // Step 5: Document is valid, proceed with extraction based on document type and file type
-                    CompanyInfo? pdfData = null;
-                    List<ImageExtractionResult> imageDataList = new List<ImageExtractionResult>();
-                    string companyNumber = "";
-                    
-                    // Extract data based on document type
-                    if (identificationResult.DocumentType == KMC_Forge_BTL_Models.Enums.DocumentType.PortfolioForm)
-                    {
-                        // Extract PDF data for PortfolioForm documents
-                        pdfData = await _pdfExtractionTool.ExtractDataAsync(documentContent);
-                        
-                    }
-                    else if (identificationResult.DocumentType == KMC_Forge_BTL_Models.Enums.DocumentType.ApplicationForm)
-                    {
-                        // Extract company number for ApplicationForm documents
-                        var companyNumberResult = await _companyNumberExtractorTool.ExtractCompanyNumberAsync(documentContent);
+                    DocumentType = KMC_Forge_BTL_Models.Enums.DocumentType.Unknown,
+                    Confidence = 0.8, // Assume valid for processing
+                    IsSuccessful = true
+                };
+            }
+            else
+            {
+                return new DocumentIdentificationProcessResult
+                {
+                    IsSuccessful = false,
+                    DocumentType = KMC_Forge_BTL_Models.Enums.DocumentType.Unknown,
+                    Confidence = 0.0,
+                    DocumentContent = "",
+                    ErrorMessage = "No text could be extracted from the document"
+                };
+            }
+
+            return new DocumentIdentificationProcessResult
+            {
+                IsSuccessful = identificationResult.IsSuccessful,
+                DocumentType = identificationResult.DocumentType,
+                Confidence = identificationResult.Confidence,
+                DocumentContent = documentContent,
+                ErrorMessage = identificationResult.ErrorMessage
+            };
+        }
+
+        public async Task<DocumentProcessingResult> ValidateCompanyHouseData(DocumentProcessingResult identificationResult)
+        {
+            try
+            {
+                List<ImageExtractionResult> imageDataList = new List<ImageExtractionResult>();
+                string companyNumber = "";
+
+            var companyNumberResult = await _companyNumberExtractorTool.ExtractCompanyNumberAsync(identificationResult.DocumentContent);
                         if (companyNumberResult.IsSuccessful)
                         {
-                            companyNumber = companyNumberResult.CompanyNumber;
+                           companyNumber = companyNumberResult.CompanyNumber;
                             CompanyHouseDetailsCapturer companyHouseDetailsCapturer = new CompanyHouseDetailsCapturer(companyNumber);
                             var path = await companyHouseDetailsCapturer.CaptureAllIncludingChargesAsync();
 
@@ -192,6 +259,7 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                                 {
                                     var extractedImageData = await _imageExtractionTool.ExtractDataAsync(chargeLink);
                                     imageDataList.Add(extractedImageData);
+                                    Console.WriteLine($"Extracted image data from {chargeLink}: {extractedImageData.PersonsEntitled}");
                                 }
                                 catch (Exception ex)
                                 {
@@ -199,41 +267,22 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                                 }
                             }
                         }
-                    }
-                    
-                    return new DocumentProcessingResult
-                    {
-                        IsValid = true,
-                        DocumentType = identificationResult.DocumentType,
-                        Confidence = identificationResult.Confidence,
-                        DocumentContent = documentContent,
-                        PdfData = pdfData,
-                        ImageDataList = imageDataList,
-                        CompanyNumber = companyNumber,
-                        FilePath = filePath,
-                        FileName = fileName,
-                        FileSize = fileSize,
-                        ProcessingMessage = $"Document successfully identified as {identificationResult.DocumentType}"
-                    };
-                }
-                else
+
+                return new DocumentProcessingResult
                 {
-                    // Step 6: Document is invalid or could not be identified
-                    return new DocumentProcessingResult
-                    {
-                        IsValid = false,
-                        DocumentType = identificationResult.DocumentType,
-                        Confidence = identificationResult.Confidence,
-                        DocumentContent = documentContent,
-                        PdfData = null,
-                        ImageDataList = new List<ImageExtractionResult>(),
-                        CompanyNumber = "",
-                        FilePath = filePath,
-                        FileName = fileName,
-                        FileSize = fileSize,
-                        ProcessingMessage = identificationResult.ErrorMessage ?? "Document type could not be determined or confidence too low"
-                    };
-                }
+                    IsValid = true,
+                    DocumentType = KMC_Forge_BTL_Models.Enums.DocumentType.PortfolioForm,
+                    Confidence = 1.0,
+                    DocumentContent = identificationResult.DocumentContent,
+                    PdfData = identificationResult.PdfData,
+                    ImageDataList = imageDataList,
+                    CompanyNumber = companyNumber,
+                    FilePath = identificationResult.FilePath,
+                    FileName = identificationResult.FileName,
+                    FileSize = identificationResult.FileSize,
+                    IdentificationResult = identificationResult.IdentificationResult,
+                    ProcessingMessage = "Company house data validated successfully"
+                };
             }
             catch (Exception ex)
             {
@@ -242,14 +291,15 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                     IsValid = false,
                     DocumentType = KMC_Forge_BTL_Models.Enums.DocumentType.Unknown,
                     Confidence = 0.0,
-                    DocumentContent = "",   
+                    DocumentContent = "",
                     PdfData = null,
                     ImageDataList = new List<ImageExtractionResult>(),
                     CompanyNumber = "",
-                    FilePath = filePath,
-                    FileName = fileName,
-                    FileSize = fileSize,
-                    ProcessingMessage = $"Processing error: {ex.Message}"
+                    FilePath = identificationResult.FilePath,
+                    FileName = identificationResult.FileName,
+                    FileSize = identificationResult.FileSize,
+                    IdentificationResult = identificationResult.IdentificationResult,
+                    ProcessingMessage = $"Error validating company house data: {ex.Message}"
                 };
             }
         }
@@ -273,18 +323,4 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
         }
     }
 
-    public class DocumentProcessingResult
-    {
-        public bool IsValid { get; set; }
-        public KMC_Forge_BTL_Models.Enums.DocumentType DocumentType { get; set; }
-        public double Confidence { get; set; }
-        public string DocumentContent { get; set; } = "";
-        public KMC_Forge_BTL_Models.PDFExtractorResponse.CompanyInfo? PdfData { get; set; }
-        public List<ImageExtractionResult> ImageDataList { get; set; } = new List<ImageExtractionResult>();
-        public string CompanyNumber { get; set; } = "";
-        public string FilePath { get; set; } = "";
-        public string FileName { get; set; } = "";
-        public long FileSize { get; set; }
-        public string ProcessingMessage { get; set; } = "";
-    }
 }
