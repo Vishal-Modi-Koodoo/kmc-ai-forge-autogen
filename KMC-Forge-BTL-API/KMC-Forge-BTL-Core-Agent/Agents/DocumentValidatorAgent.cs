@@ -130,7 +130,7 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                 pdfData = await _pdfExtractionTool.ExtractDataAsync(identificationResult.DocumentContent);
                     
                 return new DocumentProcessingResult
-                {
+                {   
                     IsValid = true,
                     DocumentType = identificationResult.DocumentType,
                     Confidence = identificationResult.Confidence,

@@ -1,6 +1,7 @@
 using KMC_AI_Forge_BTL_Agent.Contracts;
 using KMC_AI_Forge_BTL_Agent.Services;
 using KMC_Forge_BTL_API.Services;
+using KMC_Forge_BTL_API.Hubs;
 using KMC_Forge_BTL_Configurations;
 using KMC_Forge_BTL_Database.Services;
 using KMC_Forge_BTL_Database.Interfaces;
@@ -59,6 +60,10 @@ builder.Services.AddTransient<IPortfolioValidationService, PortfolioValidationSe
 builder.Services.AddTransient<IAgentRuntime, AgentRuntime>();
 builder.Services.AddTransient<KMC_Forge_BTL_Core_Agent.Agents.LeadPortfolioAgent>();
 
+// Add SignalR services
+builder.Services.AddSignalR();
+builder.Services.AddScoped<ISignalRNotificationService, SignalRNotificationService>();
+
 // Add MongoDB services
 builder.Services.AddSingleton<MongoDbService>();
 builder.Services.AddScoped<IPortfolioUploadRepository>(provider =>
@@ -101,6 +106,9 @@ app.UseStaticFiles();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Map SignalR hub
+app.MapHub<DocumentProcessingHub>("/documentProcessingHub");
 
 app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 

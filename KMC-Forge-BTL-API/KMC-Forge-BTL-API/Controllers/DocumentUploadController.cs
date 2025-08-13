@@ -11,6 +11,8 @@ using KMC_Forge_BTL_Models.DocumentIdentificationResponse;
 using KMC_Forge_BTL_Database.Services;
 using KMC_Forge_BTL_Database.Repositories;
 using KMC_Forge_BTL_Database.Interfaces;
+using KMC_Forge_BTL_API.Services;
+using KMC_Forge_BTL_API.Hubs;
 using UploadedDocument = KMC_AI_Forge_BTL_Agent.Models.UploadedDocument;
 
 [ApiController]
@@ -24,10 +26,12 @@ public class DocumentUploadController : ControllerBase
     private readonly MongoDbService _mongoDbService;
     private readonly IPortfolioUploadRepository _portfolioUploadRepository;
     private readonly LeadPortfolioAgent _leadPortfolioAgent;
+    private readonly ISignalRNotificationService _signalRNotificationService;
 
     public DocumentUploadController(IDocumentStorageService documentStorage, 
     IPortfolioValidationService validationService, ILogger<DocumentUploadController> logger, 
-    IConfiguration configuration, MongoDbService mongoDbService, IPortfolioUploadRepository portfolioUploadRepository, LeadPortfolioAgent leadPortfolioAgent){
+    IConfiguration configuration, MongoDbService mongoDbService, IPortfolioUploadRepository portfolioUploadRepository, 
+    LeadPortfolioAgent leadPortfolioAgent, ISignalRNotificationService signalRNotificationService){
         _documentStorage = documentStorage;
         _validationService = validationService;
         _logger = logger;
@@ -35,6 +39,7 @@ public class DocumentUploadController : ControllerBase
         _mongoDbService = mongoDbService;
         _portfolioUploadRepository = portfolioUploadRepository;
         _leadPortfolioAgent = leadPortfolioAgent;
+        _signalRNotificationService = signalRNotificationService;
     }
 
     /*
