@@ -13,7 +13,8 @@ namespace KMC_Forge_BTL_Database.Repositories
 
         public PortfolioUploadRepository(IMongoDatabase database)
         {
-            _collection = database.GetCollection<PortfolioUploadResponse>("PortfolioUploads");
+            var collectionName = KMC_Forge_BTL_Configurations.AppConfiguration.Instance.CosmosDBCollectionName;
+            _collection = database.GetCollection<PortfolioUploadResponse>(collectionName);
         }
 
         public async Task<PortfolioUploadResponse> CreateAsync(PortfolioUploadResponse portfolioUpload)

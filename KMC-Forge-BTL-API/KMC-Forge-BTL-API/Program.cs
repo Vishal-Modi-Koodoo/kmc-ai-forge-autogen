@@ -79,7 +79,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddSignalR();
 builder.Services.AddScoped<ISignalRNotificationService, SignalRNotificationService>();
 
-// Add MongoDB services
+// Add CosmosDB services
 builder.Services.AddSingleton<MongoDbService>();
 builder.Services.AddScoped<IPortfolioUploadRepository>(provider =>
 {
