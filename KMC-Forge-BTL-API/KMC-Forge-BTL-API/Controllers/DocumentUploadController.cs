@@ -141,9 +141,9 @@ public class DocumentUploadController : ControllerBase
 
     [HttpPost("upload2")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> UploadPortfolio([FromForm] List<IFormFile> files)
+    public async Task<IActionResult> UploadPortfolio([FromForm] List<IFormFile> files, [FromForm] string? portfolioId = null)
     {
-        var portfolioId = Guid.NewGuid().ToString();
+        portfolioId = portfolioId ?? Guid.NewGuid().ToString();
         var validDocuments = new List<UploadedDocument>();
         var invalidDocuments = new List<InvalidDocumentInfo>();
         var portfolioData = new CompanyInfo();
@@ -232,19 +232,38 @@ public class DocumentUploadController : ControllerBase
                     ProcessingStatus = ProcessingStatus.Failure,
                     ProcessingStep = ProcessingStep.DocumentValidation
                 };
-                await _signalRNotificationService.SendProcessingUpdateAsync(portfolioId, failureUpdate);
+                // This is document validation process
+                var documentValidationUpdate = new DocumentValidationUpdate
+                {
+                    PortfolioId = failureUpdate.PortfolioId,
+                    Status = failureUpdate.Status,
+                    Message = failureUpdate.Message,
+                    ProcessingStatus = failureUpdate.ProcessingStatus,
+                    ProcessingStep = failureUpdate.ProcessingStep,
+                    InvalidDocuments = invalidDocuments.Count,
+                    ValidDocuments = validDocuments.Count,
+                    TotalDocuments = files.Count,
+                    ValidFileNames = validDocuments.Select(v => v.FileName).ToList(),
+                    InvalidFileNames = invalidDocuments.Select(i => i.FileName).ToList()
+                };
+                await _signalRNotificationService.SendDocumentValidationUpdateAsync(portfolioId, documentValidationUpdate);
             }
             else
             {
-                var successUpdate = new ProcessingUpdate
+                var successUpdate = new DocumentValidationUpdate
                 {
                     PortfolioId = portfolioId,
                     Status = "DocumentValidation",
                     Message = "All documents updated successfully.",
                     ProcessingStatus = ProcessingStatus.Success,
-                    ProcessingStep = ProcessingStep.DocumentValidation
+                    ProcessingStep = ProcessingStep.DocumentValidation,
+                    InvalidDocuments = 0,
+                    ValidDocuments = validDocuments.Count,
+                    TotalDocuments = files.Count,
+                    ValidFileNames = validDocuments.Select(v => v.FileName).ToList(),
+                    InvalidFileNames = new List<string>()
                 };
-                await _signalRNotificationService.SendProcessingUpdateAsync(portfolioId, successUpdate);       
+                await _signalRNotificationService.SendDocumentValidationUpdateAsync(portfolioId, successUpdate);       
             }
 
 
@@ -256,27 +275,33 @@ public class DocumentUploadController : ControllerBase
                 var processingResult = await _leadPortfolioAgent.PortfolioCompletion(portfolioFormData);
                 portfolioData = processingResult.PdfData;   
                 // send green signal to UI
-                var successUpdate = new ProcessingUpdate
+                var successUpdate = new PortfolioCompletionUpdate
                 {
                     PortfolioId = portfolioId,
                     Status = "PortfolioCompletion",
                     Message = "Portfolio data updated successfully.",
                     ProcessingStatus = ProcessingStatus.Success,
-                    ProcessingStep = ProcessingStep.PortfolioCompletion
+                    ProcessingStep = ProcessingStep.PortfolioCompletion,
+                    HasPortfolioData = portfolioData != null,
+                    CompanyName = portfolioData?.CompanyName,
+                    PropertyCount = portfolioData?.Properties?.Count ?? 0
                 };
-                await _signalRNotificationService.SendProcessingUpdateAsync(portfolioId, successUpdate);    
+                await _signalRNotificationService.SendPortfolioCompletionUpdateAsync(portfolioId, successUpdate);    
             }
             else
             {
-                var failureUpdate = new ProcessingUpdate
+                var failureUpdate = new PortfolioCompletionUpdate
                 {
                     PortfolioId = portfolioId,
                     Status = "PortfolioCompletion",
                     Message = "Portfolio data not found.",
                     ProcessingStatus = ProcessingStatus.Failure,
-                    ProcessingStep = ProcessingStep.PortfolioCompletion
+                    ProcessingStep = ProcessingStep.PortfolioCompletion,
+                    HasPortfolioData = false,
+                    CompanyName = null,
+                    PropertyCount = 0
                 };
-                await _signalRNotificationService.SendProcessingUpdateAsync(portfolioId, failureUpdate);
+                await _signalRNotificationService.SendPortfolioCompletionUpdateAsync(portfolioId, failureUpdate);
                 // send red signal to UI
             }
 
@@ -289,27 +314,33 @@ public class DocumentUploadController : ControllerBase
                 var processingResult = await _leadPortfolioAgent.ValidateCompanyHouseData(applicationFormData);
                 chargesData = processingResult.ImageDataList;
                 // send green signal to UI
-                var successUpdate = new ProcessingUpdate
+                var successUpdate = new CompanyHouseValidationUpdate
                 {
                     PortfolioId = portfolioId,
                     Status = "CompanyHouseValidation",
                     Message = "Company house data updated successfully.",
                     ProcessingStatus = ProcessingStatus.Success,
-                    ProcessingStep = ProcessingStep.CompanyHouseValidation
+                    ProcessingStep = ProcessingStep.CompanyHouseValidation,
+                    HasCompanyData = chargesData != null && chargesData.Any(),
+                    CompanyNumber = null, // You can extract this from chargesData if available
+                    ChargeCount = chargesData?.Count ?? 0
                 };
-                await _signalRNotificationService.SendProcessingUpdateAsync(portfolioId, successUpdate);
+                await _signalRNotificationService.SendCompanyHouseValidationUpdateAsync(portfolioId, successUpdate);
             }
             else
             {
-                var failureUpdate = new ProcessingUpdate
+                var failureUpdate = new CompanyHouseValidationUpdate
                 {
                     PortfolioId = portfolioId,
                     Status = "CompanyHouseValidation",
                     Message = "Company house data not found.",
                     ProcessingStatus = ProcessingStatus.Failure,
-                    ProcessingStep = ProcessingStep.CompanyHouseValidation
+                    ProcessingStep = ProcessingStep.CompanyHouseValidation,
+                    HasCompanyData = false,
+                    CompanyNumber = null,
+                    ChargeCount = 0
                 };
-                await _signalRNotificationService.SendProcessingUpdateAsync(portfolioId, failureUpdate);
+                await _signalRNotificationService.SendCompanyHouseValidationUpdateAsync(portfolioId, failureUpdate);
                 // send red signal to UI
             }
 
