@@ -69,10 +69,9 @@ namespace KMC_Forge_BTL_Configurations
         public int MaxRetries => int.TryParse(_configuration["RetrySettings:MaxRetries"], out int maxRetries) ? maxRetries : 3;
         public int RetryDelayMs => int.TryParse(_configuration["RetrySettings:RetryDelayMs"], out int delay) ? delay : 2000;
 
-        // MongoDB Configuration
-        public string MongoDBConnectionString => _configuration["MongoDB:ConnectionString"] ?? "mongodb://localhost:27017";
-        public string MongoDBDatabaseName => _configuration["MongoDB:DatabaseName"] ?? "KMCForgeBTL";
-        public string MongoDBCollectionName => _configuration["MongoDB:CollectionName"] ?? "PortfolioExtractedData";
-
+        // CosmosDB Configuration
+        public string CosmosDBConnectionString => _configuration["CosmosDB:ConnectionString"] ?? throw new ArgumentNullException("CosmosDB:ConnectionString");
+        public string CosmosDBDatabaseName => _configuration["CosmosDB:DatabaseName"] ?? "KMCForgeBTL";
+        public string CosmosDBCollectionName => _configuration["CosmosDB:CollectionName"] ?? "PortfolioUploads";
     }
 }
