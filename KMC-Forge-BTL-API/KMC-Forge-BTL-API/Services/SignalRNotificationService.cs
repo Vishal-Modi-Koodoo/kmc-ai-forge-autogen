@@ -36,7 +36,7 @@ namespace KMC_Forge_BTL_API.Services
         }
 
         /// <summary>
-        /// Send portfolio completion update
+        /// Send portfolio completion update    
         /// </summary>
         public async Task SendPortfolioCompletionUpdateAsync(string portfolioId, PortfolioCompletionUpdate update)
         {

@@ -63,12 +63,15 @@ builder.Services.AddTransient<KMC_Forge_BTL_Core_Agent.Agents.LeadPortfolioAgent
 // Add CORS services
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(builder =>
+    var allowedOrigins = builder.Configuration.GetSection("CORS:AllowedOrigins").Get<string[]>() ?? 
+                        new[] { "http://localhost:3000", "http://localhost:8080", "http://localhost:5000", "http://localhost:8000" };
+    
+    options.AddDefaultPolicy(policyBuilder =>
     {
-        builder.SetIsOriginAllowed(origin => true)
-               .AllowAnyMethod()
-               .AllowAnyHeader()
-               .AllowCredentials();
+        policyBuilder.WithOrigins(allowedOrigins)
+                     .AllowAnyMethod()
+                     .AllowAnyHeader()
+                     .AllowCredentials();
     });
 });
 
