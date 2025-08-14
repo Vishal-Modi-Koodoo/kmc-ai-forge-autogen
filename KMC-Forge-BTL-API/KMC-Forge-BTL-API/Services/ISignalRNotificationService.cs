@@ -1,4 +1,5 @@
 using KMC_Forge_BTL_API.Hubs;
+using KMC_Forge_BTL_API.Enums;
 
 namespace KMC_Forge_BTL_API.Services
 {
@@ -31,5 +32,15 @@ namespace KMC_Forge_BTL_API.Services
         /// Send general processing update
         /// </summary>
         Task SendProcessingUpdateAsync(string portfolioId, ProcessingUpdate update);
+
+        /// <summary>
+        /// Send next step progress update
+        /// </summary>
+        Task SendNextStepProgressUpdateAsync(string portfolioId, ProcessingStep nextStep, string message = null);
+
+        /// <summary>
+        /// Send step completion update with correct progress percentage
+        /// </summary>
+        Task SendStepCompletionUpdateAsync(string portfolioId, ProcessingStep completedStep, string message = null);
     }
 }

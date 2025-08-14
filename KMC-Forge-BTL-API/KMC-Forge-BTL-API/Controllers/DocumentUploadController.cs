@@ -43,102 +43,6 @@ public class DocumentUploadController : ControllerBase
         _signalRNotificationService = signalRNotificationService;
     }
 
-    /*
-    [HttpPost("upload-locally")]
-    [Consumes("multipart/form-data")]
-    public async Task<IActionResult> UploadDocumentLocally([FromForm] List<IFormFile> files)
-    {
-        try
-        {
-            if (files == null || !files.Any())
-            {
-                return BadRequest("No files uploaded");
-            }
-
-            var uploadedFiles = new List<object>();
-            var failedFiles = new List<object>();
-
-            foreach (var file in files)
-            {
-                try
-                {
-                    // Validate file size
-                    if (file.Length > 50 * 1024 * 1024) // 50MB limit
-                    {
-                        failedFiles.Add(new
-                        {
-                            FileName = file.FileName,
-                            Error = "File size exceeds 50MB limit",
-                            FileSize = file.Length
-                        });
-                        continue;
-                    }
-
-                    // Validate file type
-                    if (!IsValidFileType(file))
-                    {
-                        failedFiles.Add(new
-                        {
-                            FileName = file.FileName,
-                            Error = "Invalid file type. Only PDF, images, and Excel files are supported",
-                            FileSize = file.Length
-                        });
-                        continue;
-                    }
-
-                    // Generate a simple portfolio ID for local storage
-                    var portfolioId = Guid.NewGuid().ToString();
-                    var documentType = "Unknown";
-
-                    // Store document locally
-                    var localFilePath = await _documentStorage.StoreDocumentLocally(file, portfolioId, documentType);
-
-                    _logger.LogInformation("Document stored locally: {FileName} at {FilePath}", file.FileName, localFilePath);
-
-                    uploadedFiles.Add(new
-                    {
-                        FileName = file.FileName,
-                        LocalFilePath = localFilePath,
-                        FileSize = file.Length,
-                        PortfolioId = portfolioId,
-                        DocumentType = documentType,
-                        UploadTimestamp = DateTimeOffset.UtcNow
-                    });
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error storing document locally: {FileName}", file.FileName);
-                    failedFiles.Add(new
-                    {
-                        FileName = file.FileName,
-                        Error = $"Processing error: {ex.Message}",
-                        FileSize = file.Length
-                    });
-                }
-            }
-
-            return Ok(new
-            {
-                Success = true,
-                Message = $"Successfully processed {uploadedFiles.Count} files, {failedFiles.Count} failed",
-                UploadedFiles = uploadedFiles,
-                FailedFiles = failedFiles,
-                Summary = new
-                {
-                    TotalFiles = files.Count,
-                    SuccessfulUploads = uploadedFiles.Count,
-                    FailedUploads = failedFiles.Count
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing multiple files upload");
-            return StatusCode(500, new { Error = "Failed to process files upload", Details = ex.Message });
-        }
-    }
-    */
-
     [HttpPost("upload2")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> UploadPortfolio([FromForm] List<IFormFile> files, [FromForm] string? portfolioId = null)
@@ -157,6 +61,9 @@ public class DocumentUploadController : ControllerBase
             }
             
             var processingStartTime = DateTime.UtcNow;
+
+            // Send initial progress notification
+            await _signalRNotificationService.SendNextStepProgressUpdateAsync(portfolioId, ProcessingStep.DocumentValidation, "Starting document validation and identification...");
 
             // Process each uploaded document with AI identification
 
@@ -263,9 +170,14 @@ public class DocumentUploadController : ControllerBase
                     ValidFileNames = validDocuments.Select(v => v.FileName).ToList(),
                     InvalidFileNames = new List<string>()
                 };
-                await _signalRNotificationService.SendDocumentValidationUpdateAsync(portfolioId, successUpdate);       
+                await _signalRNotificationService.SendDocumentValidationUpdateAsync(portfolioId, successUpdate);
+                
+                // Send completion update with correct progress percentage
+                await _signalRNotificationService.SendStepCompletionUpdateAsync(portfolioId, ProcessingStep.DocumentValidation, "Document validation completed successfully.");
             }
 
+            // Send progress notification for next step (regardless of success/failure)
+            await _signalRNotificationService.SendNextStepProgressUpdateAsync(portfolioId, ProcessingStep.PortfolioCompletion, "Starting portfolio completion processing...");
 
             //Step 2: Portfolio Completion
             var portfolioFormData = GetDocumentProcessingResult(identifiedDocuments, KMC_Forge_BTL_Models.Enums.DocumentType.PortfolioForm);
@@ -286,7 +198,10 @@ public class DocumentUploadController : ControllerBase
                     CompanyName = portfolioData?.CompanyName,
                     PropertyCount = portfolioData?.Properties?.Count ?? 0
                 };
-                await _signalRNotificationService.SendPortfolioCompletionUpdateAsync(portfolioId, successUpdate);    
+                await _signalRNotificationService.SendPortfolioCompletionUpdateAsync(portfolioId, successUpdate);
+                
+                // Send completion update with correct progress percentage
+                await _signalRNotificationService.SendStepCompletionUpdateAsync(portfolioId, ProcessingStep.PortfolioCompletion, "Portfolio completion completed successfully.");
             }
             else
             {
@@ -304,6 +219,9 @@ public class DocumentUploadController : ControllerBase
                 await _signalRNotificationService.SendPortfolioCompletionUpdateAsync(portfolioId, failureUpdate);
                 // send red signal to UI
             }
+
+            // Send progress notification for next step (regardless of success/failure)
+            await _signalRNotificationService.SendNextStepProgressUpdateAsync(portfolioId, ProcessingStep.CompanyHouseValidation, "Starting company house validation...");
 
             //Step 3: Company house validation
 
@@ -326,6 +244,9 @@ public class DocumentUploadController : ControllerBase
                     ChargeCount = chargesData?.Count ?? 0
                 };
                 await _signalRNotificationService.SendCompanyHouseValidationUpdateAsync(portfolioId, successUpdate);
+                
+                // Send completion update with correct progress percentage
+                await _signalRNotificationService.SendStepCompletionUpdateAsync(portfolioId, ProcessingStep.CompanyHouseValidation, "Company house validation completed successfully.");
             }
             else
             {
@@ -343,6 +264,9 @@ public class DocumentUploadController : ControllerBase
                 await _signalRNotificationService.SendCompanyHouseValidationUpdateAsync(portfolioId, failureUpdate);
                 // send red signal to UI
             }
+
+            // Send progress notification for final step (regardless of success/failure)
+            await _signalRNotificationService.SendNextStepProgressUpdateAsync(portfolioId, ProcessingStep.ProcessingComplete, "Finalizing processing...");
 
             var processingEndTime = DateTimeOffset.UtcNow;
 

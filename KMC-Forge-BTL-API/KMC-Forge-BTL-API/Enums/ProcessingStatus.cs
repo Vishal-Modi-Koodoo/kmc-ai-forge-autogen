@@ -6,6 +6,11 @@ namespace KMC_Forge_BTL_API.Enums
     public enum ProcessingStatus
     {
         /// <summary>
+        /// Processing is in progress
+        /// </summary>
+        InProgress,
+        
+        /// <summary>
         /// Processing completed successfully
         /// </summary>
         Success,
