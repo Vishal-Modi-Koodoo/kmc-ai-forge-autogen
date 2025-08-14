@@ -16,8 +16,10 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
     public class DocumentValidatorAgent
     {
         private readonly PdfExtractionTool _pdfExtractionTool;
+        private readonly PortfolioValidatorTool _portfolioValidatorTool;
         private readonly CompanyNumberExtractorTool _companyNumberExtractorTool;
         private readonly MiddlewareStreamingAgent<OpenAIChatAgent> _pdfAnalyserAgent;
+        private readonly MiddlewareStreamingAgent<OpenAIChatAgent> _portfolioValidatorAgent;
         private readonly MiddlewareStreamingAgent<OpenAIChatAgent> _imageAnalyserAgent;
         private readonly MiddlewareStreamingAgent<OpenAIChatAgent> _companyNumberExtractorAgent;
         private readonly ImageExtractionTool _imageExtractionTool;
@@ -40,6 +42,7 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
 
             // Read the analysis prompts from configuration paths
             string pdfAnalysisPrompt = File.ReadAllText(config.PdfDataExtractorPromptPath);
+            string portfolioValidatorPrompt = File.ReadAllText(config.PortfolioValidatorPromptPath);
             string imageAnalysisPrompt = File.ReadAllText(config.ImageDataExtractorPromptPath);
             string documentIdentifierPrompt = File.ReadAllText(config.DocumentIdentifierPromptPath);
             string companyNumberExtractorPrompt = File.ReadAllText(config.CompanyNumberExtractorPromptPath);
@@ -47,9 +50,11 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             if (_openAIClient != null)
             {
                 _pdfAnalyserAgent = new DocumentAnalyserAgent(_openAIClient, config.AzureOpenAIModel, pdfAnalysisPrompt, "pdf_analyzer").RegisterMessageConnector().RegisterPrintMessage(); 
+                _portfolioValidatorAgent = new DocumentAnalyserAgent(_openAIClient, config.AzureOpenAIModel, portfolioValidatorPrompt, "portfolio_validator").RegisterMessageConnector().RegisterPrintMessage(); 
                 _imageAnalyserAgent = new DocumentAnalyserAgent(_openAIClient, config.AzureOpenAIModel, imageAnalysisPrompt, "image_analyzer").RegisterMessageConnector().RegisterPrintMessage(); 
                 
                 _pdfExtractionTool = new PdfExtractionTool(_pdfAnalyserAgent);
+                _portfolioValidatorTool = new PortfolioValidatorTool(_portfolioValidatorAgent);
                 _imageExtractionTool = new ImageExtractionTool();
                 
                 // Create a document identification agent for the tool
@@ -160,6 +165,10 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
                     ProcessingMessage = $"Processing error: {ex.Message}"
                 };
             }
+        }
+
+        public async Task<string> PortfolioValidation(DocumentProcessingResult identificationResult){
+            return await _portfolioValidatorTool.ValidatePortfolioAsync(identificationResult.IdentificationResult.DocumentContent);
         }
 
         private async Task<DocumentIdentificationProcessResult> DocumentIdentificationProcess(string filePath, string fileName, long fileSize)

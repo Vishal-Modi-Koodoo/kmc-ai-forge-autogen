@@ -12,9 +12,9 @@ using KMC_Forge_BTL_Database.Services;
 using KMC_Forge_BTL_Database.Repositories;
 using KMC_Forge_BTL_Database.Interfaces;
 using KMC_Forge_BTL_API.Services;
-using KMC_Forge_BTL_API.Hubs;
 using KMC_Forge_BTL_API.Enums;
 using UploadedDocument = KMC_AI_Forge_BTL_Agent.Models.UploadedDocument;
+using KMC_Forge_BTL_API.Hubs;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -43,101 +43,6 @@ public class DocumentUploadController : ControllerBase
         _signalRNotificationService = signalRNotificationService;
     }
 
-    /*
-    [HttpPost("upload-locally")]
-    [Consumes("multipart/form-data")]
-    public async Task<IActionResult> UploadDocumentLocally([FromForm] List<IFormFile> files)
-    {
-        try
-        {
-            if (files == null || !files.Any())
-            {
-                return BadRequest("No files uploaded");
-            }
-
-            var uploadedFiles = new List<object>();
-            var failedFiles = new List<object>();
-
-            foreach (var file in files)
-            {
-                try
-                {
-                    // Validate file size
-                    if (file.Length > 50 * 1024 * 1024) // 50MB limit
-                    {
-                        failedFiles.Add(new
-                        {
-                            FileName = file.FileName,
-                            Error = "File size exceeds 50MB limit",
-                            FileSize = file.Length
-                        });
-                        continue;
-                    }
-
-                    // Validate file type
-                    if (!IsValidFileType(file))
-                    {
-                        failedFiles.Add(new
-                        {
-                            FileName = file.FileName,
-                            Error = "Invalid file type. Only PDF, images, and Excel files are supported",
-                            FileSize = file.Length
-                        });
-                        continue;
-                    }
-
-                    // Generate a simple portfolio ID for local storage
-                    var portfolioId = Guid.NewGuid().ToString();
-                    var documentType = "Unknown";
-
-                    // Store document locally
-                    var localFilePath = await _documentStorage.StoreDocumentLocally(file, portfolioId, documentType);
-
-                    _logger.LogInformation("Document stored locally: {FileName} at {FilePath}", file.FileName, localFilePath);
-
-                    uploadedFiles.Add(new
-                    {
-                        FileName = file.FileName,
-                        LocalFilePath = localFilePath,
-                        FileSize = file.Length,
-                        PortfolioId = portfolioId,
-                        DocumentType = documentType,
-                        UploadTimestamp = DateTimeOffset.UtcNow
-                    });
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error storing document locally: {FileName}", file.FileName);
-                    failedFiles.Add(new
-                    {
-                        FileName = file.FileName,
-                        Error = $"Processing error: {ex.Message}",
-                        FileSize = file.Length
-                    });
-                }
-            }
-
-            return Ok(new
-            {
-                Success = true,
-                Message = $"Successfully processed {uploadedFiles.Count} files, {failedFiles.Count} failed",
-                UploadedFiles = uploadedFiles,
-                FailedFiles = failedFiles,
-                Summary = new
-                {
-                    TotalFiles = files.Count,
-                    SuccessfulUploads = uploadedFiles.Count,
-                    FailedUploads = failedFiles.Count
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing multiple files upload");
-            return StatusCode(500, new { Error = "Failed to process files upload", Details = ex.Message });
-        }
-    }
-    */
 
     [HttpPost("upload2")]
     [Consumes("multipart/form-data")]
@@ -280,6 +185,23 @@ public class DocumentUploadController : ControllerBase
                 // send red signal to UI
             }
 
+
+            //Step 3: Portfolio Validation
+            var portfolioValidation = await _leadPortfolioAgent.PortfolioValidation(portfolioFormData);
+            string validationResult = portfolioValidation;
+            
+            // send green signal to UI
+            var validationUpdate = new ProcessingUpdate
+            {       
+                PortfolioId = portfolioId,
+                Status = "PortfolioValidation",
+                Message = $"Portfolio validation completed. {validationResult}",
+                ProcessingStatus = ProcessingStatus.Success,
+                ProcessingStep = ProcessingStep.PortfolioValidation
+            };
+            await _signalRNotificationService.SendProcessingUpdateAsync(portfolioId, validationUpdate);
+
+
             //Step 3: Company house validation
 
             var applicationFormData = GetDocumentProcessingResult(identifiedDocuments, KMC_Forge_BTL_Models.Enums.DocumentType.ApplicationForm);
@@ -336,8 +258,6 @@ public class DocumentUploadController : ControllerBase
                 }
             };
 
-            // INSERT_YOUR_CODE
-
             // Save the upload summary to MongoDB
             await SavePortfolioData(files, portfolioId, processingTime, portfolioData, chargesData, validDocuments, invalidDocuments);
 
@@ -357,7 +277,7 @@ public class DocumentUploadController : ControllerBase
                 var database = _mongoDbService?.GetDatabase();
                 if (database != null)
                 {
-                    var portfolioUpload = new KMC_Forge_BTL_Models.DBModels.PortfolioUploadResponse
+                    var portfolioUpload = new PortfolioUploadResponse
                     {
                         PortfolioId = portfolioId,
                         EstimatedProcessingTime = processingTime,
@@ -416,7 +336,7 @@ public class DocumentUploadController : ControllerBase
                             Reason = doc.Reason,
                             FileSize = doc.FileSize,
                             FilePath = doc.FilePath,
-                            PortfolioId = portfolioId,
+            PortfolioId = portfolioId,
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
                         }).ToList() ?? new List<InvalidDocumentInfoCollection>(),
@@ -463,8 +383,8 @@ public class DocumentUploadController : ControllerBase
         return allowedTypes.Contains(file.ContentType);
     }
 
-private DocumentProcessingResult? GetDocumentProcessingResult(List<DocumentProcessingResult> identifiedDocuments, KMC_Forge_BTL_Models.Enums.DocumentType documentType)
-{
+    private DocumentProcessingResult? GetDocumentProcessingResult(List<DocumentProcessingResult> identifiedDocuments, KMC_Forge_BTL_Models.Enums.DocumentType documentType)
+    {
      return identifiedDocuments.Where(x => x.IdentificationResult.DocumentType == documentType
      && x.IsValid && x.IdentificationResult.Confidence >= 0.7 && x.IdentificationResult.IsSuccessful).FirstOrDefault();
     }

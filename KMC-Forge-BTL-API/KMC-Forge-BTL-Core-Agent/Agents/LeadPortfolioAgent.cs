@@ -21,6 +21,10 @@ namespace KMC_Forge_BTL_Core_Agent.Agents
             return await _documentValidatorAgent.PortfolioCompletion(identificationResult);
         }
 
+        public async Task<string> PortfolioValidation(DocumentProcessingResult identificationResult){
+            return await _documentValidatorAgent.PortfolioValidation(identificationResult);
+        }
+
         public async Task<DocumentProcessingResult> IdentifyDocumentType(string filePath, string fileName, long fileSize)
         {
             // Process document through DocumentValidatorAgent (includes document type checking and extraction)

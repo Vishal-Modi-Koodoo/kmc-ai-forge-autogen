@@ -61,6 +61,7 @@ namespace KMC_Forge_BTL_Configurations
 
         // File Paths
         public string PdfDataExtractorPromptPath => _configuration["FilePaths:PdfDataExtractorPrompt"] ?? "Prompts/PDFDataExtractorPrompt.txt";
+        public string PortfolioValidatorPromptPath => _configuration["FilePaths:PortfolioValidatorPrompt"] ?? "Prompts/PortfolioValidatorPrompt.txt";
         public string ImageDataExtractorPromptPath => _configuration["FilePaths:ImageDataExtractorPrompt"] ?? "Prompts/ImageDataExtractorPrompt.txt";
         public string DocumentIdentifierPromptPath => _configuration["FilePaths:DocumentIdentifierPrompt"] ?? "Prompts/DocumentIdentifierPrompt.txt";
         public string CompanyNumberExtractorPromptPath => _configuration["FilePaths:CompanyNumberExtractorPrompt"] ?? "Prompts/CompanyNumberExtractorPrompt.txt";

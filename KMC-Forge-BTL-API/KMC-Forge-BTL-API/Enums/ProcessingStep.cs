@@ -23,6 +23,11 @@ namespace KMC_Forge_BTL_API.Enums
         /// <summary>
         /// Final processing and completion
         /// </summary>
-        ProcessingComplete
+        ProcessingComplete,
+
+        /// <summary>
+        /// Portfolio validation
+        /// </summary>
+        PortfolioValidation
     }
 }
