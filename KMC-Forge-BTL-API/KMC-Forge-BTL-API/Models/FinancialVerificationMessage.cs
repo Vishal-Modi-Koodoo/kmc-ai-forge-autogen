@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace KMC_AI_Forge_BTL_Agent.Models;
+namespace KMC.Forge.BTL.API.Models;
 
 public class FinancialVerificationMessage
 {

@@ -1,0 +1,29 @@
+# Local file storage
+Uploads/
+uploads/
+
+# Build outputs
+bin/
+obj/
+
+# Logs
+*.log
+logs/
+
+# IDE files
+.vs/
+.vscode/
+*.user
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp

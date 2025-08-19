@@ -1,0 +1,65 @@
+### Document Identification API Examples
+
+### Get supported document types
+GET http://localhost:5001/api/DocumentIdentification/supported-types
+Content-Type: application/json
+
+###
+
+### Identify document from text content
+POST http://localhost:5001/api/DocumentIdentification/identify-from-text
+Content-Type: application/json
+
+{
+  "documentContent": "MORTGAGE STATEMENT\n\nAccount Number: 123456789\nProperty Address: 123 Main Street, City, State 12345\nMonthly Payment: $1,500.00\nPrincipal Balance: $250,000.00\nInterest Rate: 3.5%\n\nThis statement covers the period from January 1, 2024 to January 31, 2024.\n\nPlease remit payment to:\nMortgage Company\nPO Box 12345\nCity, State 12345"
+}
+
+###
+
+### Identify document from text content (Application Form)
+POST http://localhost:5001/api/DocumentIdentification/identify-from-text
+Content-Type: application/json
+
+{
+  "documentContent": "LOAN APPLICATION FORM\n\nPersonal Information:\nFull Name: _________________\nDate of Birth: _________________\nSocial Security Number: _________________\n\nEmployment Information:\nEmployer: _________________\nPosition: _________________\nAnnual Income: _________________\n\nLoan Information:\nLoan Amount Requested: _________________\nPurpose of Loan: _________________\n\nI hereby certify that all information provided is true and accurate.\n\nSignature: _________________\nDate: _________________"
+}
+
+###
+
+### Identify document from text content (Portfolio Form)
+POST http://localhost:5001/api/DocumentIdentification/identify-from-text
+Content-Type: application/json
+
+{
+  "documentContent": "PORTFOLIO MANAGEMENT FORM\n\nClient Information:\nClient Name: _________________\nPortfolio ID: _________________\nInvestment Objectives: _________________\n\nAsset Allocation:\nStocks: _________________%\nBonds: _________________%\nReal Estate: _________________%\nCash: _________________%\n\nRisk Tolerance: _________________\nInvestment Horizon: _________________\n\nPortfolio Manager: _________________\nDate: _________________"
+}
+
+###
+
+### Identify document from text content (Credit Search Form)
+POST http://localhost:5001/api/DocumentIdentification/identify-from-text
+Content-Type: application/json
+
+{
+  "documentContent": "CREDIT SEARCH APPLICATION\n\nApplicant Information:\nFull Name: _________________\nDate of Birth: _________________\nAddress: _________________\n\nCredit Search Details:\nType of Search: _________________\nPurpose: _________________\n\nConsent:\nI authorize the credit search and understand that this inquiry may appear on my credit report.\n\nSignature: _________________\nDate: _________________"
+}
+
+###
+
+### Identify document from text content (ASTS)
+POST http://localhost:5001/api/DocumentIdentification/identify-from-text
+Content-Type: application/json
+
+{
+  "documentContent": "ASTS TRANSFER FORM\n\nAutomated System for Transfer of Securities\n\nTransfer Details:\nFrom Account: _________________\nTo Account: _________________\nSecurity Type: _________________\nQuantity: _________________\n\nTransfer Instructions:\nTransfer Method: _________________\nSettlement Date: _________________\n\nAuthorized Signature: _________________\nDate: _________________"
+}
+
+###
+
+### Identify document from image (Base64 encoded image would go here)
+POST http://localhost:5001/api/DocumentIdentification/identify-from-image
+Content-Type: application/json
+
+{
+  "imageBase64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+}

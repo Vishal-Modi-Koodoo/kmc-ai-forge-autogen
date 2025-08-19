@@ -4,7 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>KMC_Forge_BTL_API</RootNamespace>
+    <RootNamespace>KMC.Forge.BTL.API</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,7 +1,7 @@
-using KMC_Forge_BTL_API.Hubs;
-using KMC_Forge_BTL_API.Enums;
+using KMC.Forge.BTL.API.Hubs;
+using KMC.Forge.BTL.API.Enums;
 
-namespace KMC_Forge_BTL_API.Services
+namespace KMC.Forge.BTL.API.Services
 {
     /// <summary>
     /// Interface for SignalR notification service

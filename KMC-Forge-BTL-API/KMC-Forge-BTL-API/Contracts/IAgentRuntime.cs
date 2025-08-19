@@ -1,4 +1,4 @@
-namespace KMC_AI_Forge_BTL_Agent.Contracts;
+namespace KMC.Forge.BTL.API.Contracts;
 
 public record TopicId(string Name);
 

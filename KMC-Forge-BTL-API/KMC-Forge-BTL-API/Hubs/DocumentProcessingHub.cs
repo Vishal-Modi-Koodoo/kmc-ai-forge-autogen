@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
-using KMC_Forge_BTL_API.Enums;
+using KMC.Forge.BTL.API.Enums;
 
-namespace KMC_Forge_BTL_API.Hubs
+namespace KMC.Forge.BTL.API.Hubs
 {
     /// <summary>
     /// SignalR Hub for real-time document processing updates

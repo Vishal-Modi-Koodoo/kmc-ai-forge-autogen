@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using KMC_AI_Forge_BTL_Agent.Contracts;
-using KMC_AI_Forge_BTL_Agent.Models;
+using KMC.Forge.BTL.API.Contracts;
+using KMC.Forge.BTL.API.Models;
 using KMC_Forge_BTL_Core_Agent.Agents;
-using KMC_AI_Forge_BTL_Agent.AgentInitiatorLayer;
+using KMC.Forge.BTL.API.AgentInitiatorLayer;
 using KMC_Forge_BTL_Models;
 using KMC_Forge_BTL_Models.PDFExtractorResponse;
 using KMC_Forge_BTL_Models.ImageDataExtractorResponse;
@@ -11,10 +11,10 @@ using KMC_Forge_BTL_Models.DocumentIdentificationResponse;
 using KMC_Forge_BTL_Database.Services;
 using KMC_Forge_BTL_Database.Repositories;
 using KMC_Forge_BTL_Database.Interfaces;
-using KMC_Forge_BTL_API.Services;
-using KMC_Forge_BTL_API.Hubs;
-using KMC_Forge_BTL_API.Enums;
-using UploadedDocument = KMC_AI_Forge_BTL_Agent.Models.UploadedDocument;
+using KMC.Forge.BTL.API.Services;
+using KMC.Forge.BTL.API.Hubs;
+using KMC.Forge.BTL.API.Enums;
+using UploadedDocument = KMC.Forge.BTL.API.Models.UploadedDocument;
 
 [ApiController]
 [Route("api/[controller]")]

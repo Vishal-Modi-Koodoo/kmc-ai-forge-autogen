@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using KMC_AI_Forge_BTL_Agent.Contracts;
+using KMC.Forge.BTL.API.Contracts;
 
 [ApiController]
 [Route("api/[controller]")]

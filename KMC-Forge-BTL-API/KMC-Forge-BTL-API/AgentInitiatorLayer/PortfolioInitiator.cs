@@ -1,7 +1,7 @@
 using KMC_Forge_BTL_Core_Agent.Agents;
 using KMC_Forge_BTL_Models.PDFExtractorResponse;
 
-namespace KMC_AI_Forge_BTL_Agent.AgentInitiatorLayer;
+namespace KMC.Forge.BTL.API.AgentInitiatorLayer;
 
 public class PortfolioInitiator
 {

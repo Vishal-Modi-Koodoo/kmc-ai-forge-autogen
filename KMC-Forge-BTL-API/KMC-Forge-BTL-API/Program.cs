@@ -1,7 +1,7 @@
-using KMC_AI_Forge_BTL_Agent.Contracts;
-using KMC_AI_Forge_BTL_Agent.Services;
-using KMC_Forge_BTL_API.Services;
-using KMC_Forge_BTL_API.Hubs;
+using KMC.Forge.BTL.API.Contracts;
+using KMC.Forge.BTL.API.Services;
+using KMC.Forge.BTL.API.Services;
+using KMC.Forge.BTL.API.Hubs;
 using KMC_Forge_BTL_Configurations;
 using KMC_Forge_BTL_Database.Services;
 using KMC_Forge_BTL_Database.Interfaces;

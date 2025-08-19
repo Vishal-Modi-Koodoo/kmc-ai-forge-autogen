@@ -2,9 +2,9 @@ using Azure.Storage.Blobs;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
-using KMC_AI_Forge_BTL_Agent.Contracts;
+using KMC.Forge.BTL.API.Contracts;
 
-namespace KMC_Forge_BTL_API.Services;
+namespace KMC.Forge.BTL.API.Services;
 
 public class DocumentRetrievalService : IDocumentRetrievalService
 {

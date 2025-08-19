@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-namespace KMC_AI_Forge_BTL_Agent.Services;
+namespace KMC.Forge.BTL.API.Services;
 
 public class CustomLogger : ILogger
 {

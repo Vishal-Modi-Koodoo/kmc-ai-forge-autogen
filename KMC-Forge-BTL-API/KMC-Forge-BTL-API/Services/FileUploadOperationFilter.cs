@@ -1,7 +1,7 @@
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace KMC_Forge_BTL_API.Services;
+namespace KMC.Forge.BTL.API.Services;
 
 public class FileUploadOperationFilter : IOperationFilter
 {

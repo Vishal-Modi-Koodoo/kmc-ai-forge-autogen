@@ -1,4 +1,4 @@
-namespace KMC_Forge_BTL_API.Enums
+namespace KMC.Forge.BTL.API.Enums
 {
     /// <summary>
     /// Enum for document processing steps

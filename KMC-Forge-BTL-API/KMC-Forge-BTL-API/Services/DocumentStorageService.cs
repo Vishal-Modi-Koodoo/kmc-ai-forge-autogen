@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Http;
-using KMC_AI_Forge_BTL_Agent.Contracts;
+using KMC.Forge.BTL.API.Contracts;
 using System.Threading.Tasks;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.IO;
 
-namespace KMC_AI_Forge_BTL_Agent.Services;
+namespace KMC.Forge.BTL.API.Services;
 
 public class DocumentStorageService : IDocumentStorageService
 {

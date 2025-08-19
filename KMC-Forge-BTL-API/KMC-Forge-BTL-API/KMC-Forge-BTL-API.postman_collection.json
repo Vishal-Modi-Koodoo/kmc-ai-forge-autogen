@@ -1,0 +1,279 @@
+{
+	"info": {
+		"_postman_id": "kmc-forge-btl-api-collection",
+		"name": "KMC Forge BTL API",
+		"description": "Postman collection for testing KMC Forge BTL API endpoints including multiple file uploads",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "File Upload",
+			"item": [
+				{
+					"name": "Upload Multiple Files - Portfolio",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "files",
+									"type": "file",
+									"src": [],
+									"description": "Select multiple files to upload"
+								},
+								{
+									"key": "files",
+									"type": "file",
+									"src": [],
+									"description": "Second file (optional)"
+								},
+								{
+									"key": "files",
+									"type": "file",
+									"src": [],
+									"description": "Third file (optional)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/DocumentUpload/upload2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"DocumentUpload",
+								"upload2"
+							]
+						},
+						"description": "Upload multiple files for portfolio processing. Supports PDF, images, Excel files, and Word documents. Each file will be processed through AI for document type identification."
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Single File - Portfolio",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "files",
+									"type": "file",
+									"src": [],
+									"description": "Select a single file to upload"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/DocumentUpload/upload2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"DocumentUpload",
+								"upload2"
+							]
+						},
+						"description": "Upload a single file for portfolio processing. This endpoint can handle both single and multiple file uploads."
+					},
+					"response": []
+				}
+			],
+			"description": "File upload endpoints for document processing"
+		},
+		{
+			"name": "Document Identification",
+			"item": [
+				{
+					"name": "Identify Document from Text",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"documentContent\": \"MORTGAGE STATEMENT\\n\\nAccount Number: 123456789\\nProperty Address: 123 Main Street, City, State 12345\\nMonthly Payment: $1,500.00\\nPrincipal Balance: $250,000.00\\nInterest Rate: 3.5%\\n\\nThis statement covers the period from January 1, 2024 to January 31, 2024.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/DocumentIdentification/identify-from-text",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"DocumentIdentification",
+								"identify-from-text"
+							]
+						},
+						"description": "Identify document type from text content using AI"
+					},
+					"response": []
+				},
+				{
+					"name": "Identify Document from Image",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"imageBase64\": \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/DocumentIdentification/identify-from-image",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"DocumentIdentification",
+								"identify-from-image"
+							]
+						},
+						"description": "Identify document type from base64 encoded image using AI"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Supported Document Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/DocumentIdentification/supported-types",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"DocumentIdentification",
+								"supported-types"
+							]
+						},
+						"description": "Get list of supported document types"
+					},
+					"response": []
+				}
+			],
+			"description": "Document identification endpoints using AI"
+		},
+		{
+			"name": "Health & Status",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check if the API is running and healthy"
+					},
+					"response": []
+				},
+				{
+					"name": "Swagger UI",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/swagger",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"swagger"
+							]
+						},
+						"description": "Access Swagger UI documentation"
+					},
+					"response": []
+				},
+				{
+					"name": "File Upload Test Page",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/file-upload-test.html",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"file-upload-test.html"
+							]
+						},
+						"description": "Access the custom file upload test page"
+					},
+					"response": []
+				}
+			],
+			"description": "Health check and status endpoints"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Pre-request script to set up common headers",
+					"pm.request.headers.add({",
+					"    key: 'User-Agent',",
+					"    value: 'KMC-Forge-BTL-API-Postman'",
+					"});"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Test script to validate responses",
+					"pm.test(\"Status code is 200 or 201\", function () {",
+					"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+					"});",
+					"",
+					"pm.test(\"Response has required fields\", function () {",
+					"    const responseJson = pm.response.json();",
+					"    ",
+					"    if (pm.request.url.path.includes('upload2')) {",
+					"        pm.expect(responseJson).to.have.property('portfolioId');",
+					"        pm.expect(responseJson).to.have.property('status');",
+					"        pm.expect(responseJson).to.have.property('summary');",
+					"    }",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5001",
+			"type": "string",
+			"description": "Base URL for the KMC Forge BTL API"
+		}
+	]
+}

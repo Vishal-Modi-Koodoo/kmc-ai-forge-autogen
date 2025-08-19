@@ -1,6 +1,6 @@
-using KMC_AI_Forge_BTL_Agent.Models;
+using KMC.Forge.BTL.API.Models;
 
-namespace KMC_AI_Forge_BTL_Agent.Contracts;
+namespace KMC.Forge.BTL.API.Contracts;
 
 public interface IPortfolioValidationService
 {

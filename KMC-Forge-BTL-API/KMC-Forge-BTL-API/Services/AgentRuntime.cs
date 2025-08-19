@@ -1,6 +1,6 @@
-using KMC_AI_Forge_BTL_Agent.Contracts;
+using KMC.Forge.BTL.API.Contracts;
 
-namespace KMC_AI_Forge_BTL_Agent.Services;
+namespace KMC.Forge.BTL.API.Services;
 
 public class AgentRuntime : IAgentRuntime
 {

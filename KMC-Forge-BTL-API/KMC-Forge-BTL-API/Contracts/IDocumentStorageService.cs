@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 
-namespace KMC_AI_Forge_BTL_Agent.Contracts;
+namespace KMC.Forge.BTL.API.Contracts;
 
 public interface IDocumentStorageService
 {
